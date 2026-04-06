@@ -53,6 +53,9 @@ const Navbar = () => {
 
         {userInfo ? (
           <>
+            <Link to='/myorders' style={styles.link}>
+              📦 My Orders
+            </Link>
             <span style={styles.username}>👤 {userInfo.name}</span>
             <button onClick={logoutHandler} style={styles.logoutBtn}>
               Logout

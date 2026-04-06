@@ -8,8 +8,8 @@ import ProductDetailPage from './pages/ProductDetailPage';
 import CartPage from './pages/CartPage';
 import SearchPage from './pages/SearchPage';
 import CheckoutPage from './pages/CheckoutPage';
-// ✅ ADD THIS
 import OrderConfirmationPage from './pages/OrderConfirmationPage';
+import MyOrdersPage from './pages/MyOrdersPage';
 
 function App() {
   return (
@@ -24,8 +24,8 @@ function App() {
           <Route path='/cart' element={<CartPage />} />
           <Route path='/search' element={<SearchPage />} />
           <Route path='/checkout' element={<CheckoutPage />} />
-          {/* ✅ ADD THIS */}
           <Route path='/order/:id' element={<OrderConfirmationPage />} />
+          <Route path='/myorders' element={<MyOrdersPage />} />
         </Routes>
       </main>
     </Router>

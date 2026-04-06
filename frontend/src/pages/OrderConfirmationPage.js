@@ -13,6 +13,11 @@ const OrderConfirmationPage = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    if (!userInfo) {
+      navigate('/login');
+      return;
+    }
+
     const fetchOrder = async () => {
       try {
         const { data } = await axios.get(
@@ -29,7 +34,7 @@ const OrderConfirmationPage = () => {
       }
     };
     fetchOrder();
-  }, [id, userInfo]);
+  }, [id, userInfo, navigate]);
 
   if (loading) return <h2 style={{ textAlign: 'center' }}>Loading order...</h2>;
   if (error) return <h2 style={{ color: 'red', textAlign: 'center' }}>{error}</h2>;
