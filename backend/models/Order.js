@@ -33,6 +33,11 @@ const orderSchema = new mongoose.Schema(
       required: true,
       default: 'COD',
     },
+    paymentResult: {
+      razorpay_order_id: { type: String },
+      razorpay_payment_id: { type: String },
+      razorpay_signature: { type: String },
+    },
     totalPrice: {
       type: Number,
       required: true,
