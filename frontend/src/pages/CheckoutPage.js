@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 
@@ -18,7 +19,8 @@ const CheckoutPage = () => {
     phone: '',
   });
   const [paymentMethod, setPaymentMethod] = useState('COD');
-  const [orderPlaced, setOrderPlaced] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const totalPrice = cartItems.reduce(
     (acc, item) => acc + item.price * item.qty, 0
@@ -27,71 +29,65 @@ const CheckoutPage = () => {
     (acc, item) => acc + item.qty, 0
   );
 
-  // Redirect to login if not logged in
   if (!userInfo) {
     return (
       <div style={styles.centered}>
         <h2>Please log in to checkout</h2>
-        <button
-          onClick={() => navigate('/login')}
-          style={styles.yellowBtn}
-        >
+        <button onClick={() => navigate('/login')} style={styles.yellowBtn}>
           Go to Login
         </button>
       </div>
     );
   }
 
-  // Empty cart
-  if (cartItems.length === 0 && !orderPlaced) {
+  if (cartItems.length === 0) {
     return (
       <div style={styles.centered}>
         <h2>Your cart is empty</h2>
-        <button
-          onClick={() => navigate('/')}
-          style={styles.yellowBtn}
-        >
+        <button onClick={() => navigate('/')} style={styles.yellowBtn}>
           Go Shopping
         </button>
       </div>
     );
   }
 
-  // Order Success Screen
-  if (orderPlaced) {
-    return (
-      <div style={styles.successBox}>
-        <div style={styles.successIcon}>✅</div>
-        <h2 style={styles.successTitle}>Order Placed Successfully!</h2>
-        <p style={styles.successText}>
-          Thank you, <strong>{userInfo.name}</strong>! Your order of{' '}
-          <strong>{totalItems} item(s)</strong> worth{' '}
-          <strong>₹{totalPrice.toLocaleString()}</strong> has been placed.
-        </p>
-        <p style={styles.successText}>
-          Delivering to: <strong>{address.street}, {address.city}, {address.state} - {address.pincode}</strong>
-        </p>
-        <p style={styles.successText}>
-          Payment: <strong>{paymentMethod === 'COD' ? 'Cash on Delivery' : 'Online Payment'}</strong>
-        </p>
-        <button
-          onClick={() => navigate('/')}
-          style={styles.yellowBtn}
-        >
-          Continue Shopping
-        </button>
-      </div>
-    );
-  }
-
-  const placeOrderHandler = () => {
-    clearCart();
-    setOrderPlaced(true);
+  const placeOrderHandler = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { data } = await axios.post(
+        'http://localhost:5000/api/orders',
+        {
+          orderItems: cartItems.map((item) => ({
+            name: item.name,
+            qty: item.qty,
+            image: item.image,
+            price: item.price,
+            product: item._id,
+          })),
+          shippingAddress: address,
+          paymentMethod,
+          totalPrice,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${userInfo.token}`,
+          },
+        }
+      );
+      clearCart();
+      navigate(`/order/${data._id}`);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to place order');
+      setLoading(false);
+    }
   };
 
   return (
     <div style={styles.container}>
       <h2 style={styles.heading}>Checkout</h2>
+
+      {error && <p style={styles.error}>{error}</p>}
 
       {/* Step Indicator */}
       <div style={styles.steps}>
@@ -133,9 +129,7 @@ const CheckoutPage = () => {
                   <input
                     style={styles.input}
                     value={address.fullName}
-                    onChange={(e) =>
-                      setAddress({ ...address, fullName: e.target.value })
-                    }
+                    onChange={(e) => setAddress({ ...address, fullName: e.target.value })}
                     placeholder='Full name'
                   />
                 </div>
@@ -144,9 +138,7 @@ const CheckoutPage = () => {
                   <input
                     style={styles.input}
                     value={address.phone}
-                    onChange={(e) =>
-                      setAddress({ ...address, phone: e.target.value })
-                    }
+                    onChange={(e) => setAddress({ ...address, phone: e.target.value })}
                     placeholder='10-digit phone number'
                   />
                 </div>
@@ -155,9 +147,7 @@ const CheckoutPage = () => {
                   <input
                     style={styles.input}
                     value={address.street}
-                    onChange={(e) =>
-                      setAddress({ ...address, street: e.target.value })
-                    }
+                    onChange={(e) => setAddress({ ...address, street: e.target.value })}
                     placeholder='House no, Street, Area'
                   />
                 </div>
@@ -166,9 +156,7 @@ const CheckoutPage = () => {
                   <input
                     style={styles.input}
                     value={address.city}
-                    onChange={(e) =>
-                      setAddress({ ...address, city: e.target.value })
-                    }
+                    onChange={(e) => setAddress({ ...address, city: e.target.value })}
                     placeholder='City'
                   />
                 </div>
@@ -177,9 +165,7 @@ const CheckoutPage = () => {
                   <input
                     style={styles.input}
                     value={address.state}
-                    onChange={(e) =>
-                      setAddress({ ...address, state: e.target.value })
-                    }
+                    onChange={(e) => setAddress({ ...address, state: e.target.value })}
                     placeholder='State'
                   />
                 </div>
@@ -188,9 +174,7 @@ const CheckoutPage = () => {
                   <input
                     style={styles.input}
                     value={address.pincode}
-                    onChange={(e) =>
-                      setAddress({ ...address, pincode: e.target.value })
-                    }
+                    onChange={(e) => setAddress({ ...address, pincode: e.target.value })}
                     placeholder='6-digit pincode'
                   />
                 </div>
@@ -234,18 +218,8 @@ const CheckoutPage = () => {
                 ))}
               </div>
               <div style={styles.btnRow}>
-                <button
-                  onClick={() => setStep(1)}
-                  style={styles.backBtn}
-                >
-                  ← Back
-                </button>
-                <button
-                  onClick={() => setStep(3)}
-                  style={styles.yellowBtn}
-                >
-                  Continue to Review →
-                </button>
+                <button onClick={() => setStep(1)} style={styles.backBtn}>← Back</button>
+                <button onClick={() => setStep(3)} style={styles.yellowBtn}>Continue to Review →</button>
               </div>
             </div>
           )}
@@ -254,16 +228,10 @@ const CheckoutPage = () => {
           {step === 3 && (
             <div>
               <h3 style={styles.stepTitle}>Review Your Order</h3>
-
-              {/* Items */}
               <div style={styles.reviewItems}>
                 {cartItems.map((item) => (
                   <div key={item._id} style={styles.reviewItem}>
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      style={styles.reviewImage}
-                    />
+                    <img src={item.image} alt={item.name} style={styles.reviewImage} />
                     <div style={{ flex: 1 }}>
                       <p style={styles.reviewName}>{item.name}</p>
                       <p style={styles.reviewMeta}>
@@ -274,8 +242,6 @@ const CheckoutPage = () => {
                   </div>
                 ))}
               </div>
-
-              {/* Shipping Info */}
               <div style={styles.reviewSection}>
                 <p style={styles.reviewSectionTitle}>📦 Shipping To</p>
                 <p style={styles.reviewMeta}>
@@ -284,31 +250,22 @@ const CheckoutPage = () => {
                 </p>
                 <p style={styles.reviewMeta}>📞 {address.phone}</p>
               </div>
-
-              {/* Payment Info */}
               <div style={styles.reviewSection}>
                 <p style={styles.reviewSectionTitle}>💳 Payment</p>
                 <p style={styles.reviewMeta}>
-                  {paymentMethod === 'COD'
-                    ? 'Cash on Delivery'
-                    : paymentMethod === 'UPI'
-                    ? 'UPI Payment'
+                  {paymentMethod === 'COD' ? 'Cash on Delivery'
+                    : paymentMethod === 'UPI' ? 'UPI Payment'
                     : 'Credit / Debit Card'}
                 </p>
               </div>
-
               <div style={styles.btnRow}>
-                <button
-                  onClick={() => setStep(2)}
-                  style={styles.backBtn}
-                >
-                  ← Back
-                </button>
+                <button onClick={() => setStep(2)} style={styles.backBtn}>← Back</button>
                 <button
                   onClick={placeOrderHandler}
                   style={styles.placeOrderBtn}
+                  disabled={loading}
                 >
-                  🛒 Place Order · ₹{totalPrice.toLocaleString()}
+                  {loading ? 'Placing Order...' : `🛒 Place Order · ₹${totalPrice.toLocaleString()}`}
                 </button>
               </div>
             </div>
@@ -326,6 +283,10 @@ const CheckoutPage = () => {
           ))}
           <hr />
           <div style={styles.summaryItem}>
+            <span>Items ({totalItems})</span>
+            <span>₹{totalPrice.toLocaleString()}</span>
+          </div>
+          <div style={styles.summaryItem}>
             <span>Delivery</span>
             <span style={{ color: 'green' }}>FREE</span>
           </div>
@@ -342,162 +303,46 @@ const CheckoutPage = () => {
 const styles = {
   container: { maxWidth: '1100px', margin: '0 auto' },
   heading: { fontSize: '24px', marginBottom: '20px', color: '#131921' },
-  steps: {
-    display: 'flex',
-    gap: '32px',
-    marginBottom: '30px',
-    alignItems: 'center',
+  error: {
+    backgroundColor: '#fff0f0',
+    border: '1px solid #f5c6c6',
+    color: '#B12704',
+    padding: '10px',
+    borderRadius: '4px',
+    marginBottom: '16px',
   },
-  stepItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-  },
+  steps: { display: 'flex', gap: '32px', marginBottom: '30px', alignItems: 'center' },
+  stepItem: { display: 'flex', alignItems: 'center', gap: '8px' },
   stepCircle: {
-    width: '32px',
-    height: '32px',
-    borderRadius: '50%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontWeight: 'bold',
-    fontSize: '14px',
+    width: '32px', height: '32px', borderRadius: '50%',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontWeight: 'bold', fontSize: '14px',
   },
   stepLabel: { fontSize: '14px' },
-  layout: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 300px',
-    gap: '30px',
-    alignItems: 'start',
-  },
-  formBox: {
-    border: '1px solid #ddd',
-    borderRadius: '8px',
-    padding: '24px',
-    backgroundColor: '#fff',
-  },
+  layout: { display: 'grid', gridTemplateColumns: '1fr 300px', gap: '30px', alignItems: 'start' },
+  formBox: { border: '1px solid #ddd', borderRadius: '8px', padding: '24px', backgroundColor: '#fff' },
   stepTitle: { fontSize: '18px', marginBottom: '20px', color: '#131921' },
-  formGrid: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '16px',
-    marginBottom: '20px',
-  },
+  formGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' },
   field: { display: 'flex', flexDirection: 'column', gap: '6px' },
   label: { fontSize: '13px', fontWeight: 'bold', color: '#131921' },
-  input: {
-    padding: '10px',
-    borderRadius: '4px',
-    border: '1px solid #ccc',
-    fontSize: '14px',
-    outline: 'none',
-  },
-  paymentOptions: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '14px',
-    marginBottom: '24px',
-  },
-  paymentOption: {
-    border: '1px solid #ddd',
-    borderRadius: '6px',
-    padding: '14px',
-    cursor: 'pointer',
-    fontSize: '15px',
-    display: 'flex',
-    alignItems: 'center',
-  },
+  input: { padding: '10px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '14px', outline: 'none' },
+  paymentOptions: { display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '24px' },
+  paymentOption: { border: '1px solid #ddd', borderRadius: '6px', padding: '14px', cursor: 'pointer', fontSize: '15px', display: 'flex', alignItems: 'center' },
   btnRow: { display: 'flex', gap: '12px', marginTop: '16px' },
-  yellowBtn: {
-    backgroundColor: '#FFD814',
-    border: 'none',
-    padding: '12px 24px',
-    borderRadius: '8px',
-    fontWeight: 'bold',
-    fontSize: '15px',
-    cursor: 'pointer',
-    color: '#131921',
-  },
-  backBtn: {
-    backgroundColor: '#fff',
-    border: '1px solid #ccc',
-    padding: '12px 20px',
-    borderRadius: '8px',
-    fontSize: '14px',
-    cursor: 'pointer',
-  },
-  placeOrderBtn: {
-    backgroundColor: '#f08804',
-    border: 'none',
-    padding: '12px 24px',
-    borderRadius: '8px',
-    fontWeight: 'bold',
-    fontSize: '15px',
-    cursor: 'pointer',
-    color: '#fff',
-    flex: 1,
-  },
-  summary: {
-    border: '1px solid #ddd',
-    borderRadius: '8px',
-    padding: '20px',
-    backgroundColor: '#fff',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px',
-  },
+  yellowBtn: { backgroundColor: '#FFD814', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', color: '#131921' },
+  backBtn: { backgroundColor: '#fff', border: '1px solid #ccc', padding: '12px 20px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' },
+  placeOrderBtn: { backgroundColor: '#f08804', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', color: '#fff', flex: 1 },
+  summary: { border: '1px solid #ddd', borderRadius: '8px', padding: '20px', backgroundColor: '#fff', display: 'flex', flexDirection: 'column', gap: '10px' },
   summaryTitle: { fontSize: '18px', margin: 0 },
-  summaryItem: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    fontSize: '14px',
-  },
-  reviewItems: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-    marginBottom: '20px',
-  },
-  reviewItem: {
-    display: 'flex',
-    gap: '12px',
-    alignItems: 'center',
-    padding: '10px',
-    border: '1px solid #eee',
-    borderRadius: '6px',
-  },
-  reviewImage: {
-    width: '60px',
-    height: '60px',
-    objectFit: 'cover',
-    borderRadius: '4px',
-  },
+  summaryItem: { display: 'flex', justifyContent: 'space-between', fontSize: '14px' },
+  reviewItems: { display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' },
+  reviewItem: { display: 'flex', gap: '12px', alignItems: 'center', padding: '10px', border: '1px solid #eee', borderRadius: '6px' },
+  reviewImage: { width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px' },
   reviewName: { fontWeight: 'bold', margin: '0 0 4px', fontSize: '14px' },
   reviewMeta: { color: '#555', fontSize: '13px', margin: 0 },
-  reviewSection: {
-    border: '1px solid #eee',
-    borderRadius: '6px',
-    padding: '12px',
-    marginBottom: '12px',
-  },
-  reviewSectionTitle: {
-    fontWeight: 'bold',
-    margin: '0 0 6px',
-    fontSize: '14px',
-  },
+  reviewSection: { border: '1px solid #eee', borderRadius: '6px', padding: '12px', marginBottom: '12px' },
+  reviewSectionTitle: { fontWeight: 'bold', margin: '0 0 6px', fontSize: '14px' },
   centered: { textAlign: 'center', padding: '60px' },
-  successBox: {
-    maxWidth: '500px',
-    margin: '40px auto',
-    textAlign: 'center',
-    border: '1px solid #ddd',
-    borderRadius: '8px',
-    padding: '40px',
-    backgroundColor: '#fff',
-  },
-  successIcon: { fontSize: '48px', marginBottom: '16px' },
-  successTitle: { fontSize: '24px', color: '#131921', marginBottom: '16px' },
-  successText: { color: '#555', fontSize: '15px', marginBottom: '8px' },
 };
 
 export default CheckoutPage;

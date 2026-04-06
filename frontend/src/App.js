@@ -7,8 +7,9 @@ import RegisterPage from './pages/RegisterPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import CartPage from './pages/CartPage';
 import SearchPage from './pages/SearchPage';
-// ✅ ADD THIS
 import CheckoutPage from './pages/CheckoutPage';
+// ✅ ADD THIS
+import OrderConfirmationPage from './pages/OrderConfirmationPage';
 
 function App() {
   return (
@@ -22,8 +23,9 @@ function App() {
           <Route path='/product/:id' element={<ProductDetailPage />} />
           <Route path='/cart' element={<CartPage />} />
           <Route path='/search' element={<SearchPage />} />
-          {/* ✅ ADD THIS */}
           <Route path='/checkout' element={<CheckoutPage />} />
+          {/* ✅ ADD THIS */}
+          <Route path='/order/:id' element={<OrderConfirmationPage />} />
         </Routes>
       </main>
     </Router>

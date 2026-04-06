@@ -11,16 +11,18 @@ app.use(cors());
 app.use(express.json());
 
 const authRoutes = require('./routes/authRoutes');
-// ✅ ADD THIS
 const productRoutes = require('./routes/productRoutes');
+// ✅ ADD THIS
+const orderRoutes = require('./routes/orderRoutes');
 
 app.get('/', (req, res) => {
   res.send('Amazon Clone API is running...');
 });
 
 app.use('/api/auth', authRoutes);
-// ✅ ADD THIS
 app.use('/api/products', productRoutes);
+// ✅ ADD THIS
+app.use('/api/orders', orderRoutes);
 
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI;
