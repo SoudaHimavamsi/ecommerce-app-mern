@@ -10,6 +10,8 @@ import SearchPage from './pages/SearchPage';
 import CheckoutPage from './pages/CheckoutPage';
 import OrderConfirmationPage from './pages/OrderConfirmationPage';
 import MyOrdersPage from './pages/MyOrdersPage';
+import AdminDashboardPage from './pages/AdminDashboardPage';
+import AdminProductsPage from './pages/AdminProductsPage';
 
 function App() {
   return (
@@ -26,6 +28,8 @@ function App() {
           <Route path='/checkout' element={<CheckoutPage />} />
           <Route path='/order/:id' element={<OrderConfirmationPage />} />
           <Route path='/myorders' element={<MyOrdersPage />} />
+          <Route path='/admin' element={<AdminDashboardPage />} />
+          <Route path='/admin/products' element={<AdminProductsPage />} />
         </Routes>
       </main>
     </Router>

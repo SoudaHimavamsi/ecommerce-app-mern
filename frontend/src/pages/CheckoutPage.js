@@ -18,7 +18,7 @@ const CheckoutPage = () => {
     pincode: '',
     phone: '',
   });
-  const [paymentMethod, setPaymentMethod] = useState('COD');
+  const [paymentMethod, setPaymentMethod] = useState('UPI');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -51,10 +51,82 @@ const CheckoutPage = () => {
     );
   }
 
+  // Handle Razorpay Payment
+  const handleRazorpayPayment = async (orderData) => {
+    try {
+      // Step 1: Create Razorpay order
+      const { data: paymentOrder } = await axios.post(
+        'http://localhost:5000/api/payment/create-order',
+        { amount: totalPrice },
+        {
+          headers: {
+            Authorization: `Bearer ${userInfo.token}`,
+          },
+        }
+      );
+
+      // Step 2: Configure Razorpay options
+      const options = {
+        key: paymentOrder.keyId,
+        amount: paymentOrder.amount,
+        currency: paymentOrder.currency,
+        name: 'ShopClone',
+        description: 'Order Payment',
+        order_id: paymentOrder.orderId,
+        handler: async function (response) {
+          // Step 3: Verify payment
+          try {
+            await axios.post(
+              'http://localhost:5000/api/payment/verify',
+              {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                orderId: orderData._id,
+              },
+              {
+                headers: {
+                  Authorization: `Bearer ${userInfo.token}`,
+                },
+              }
+            );
+
+            // Payment successful
+            clearCart();
+            navigate(`/order/${orderData._id}`);
+          } catch (err) {
+            setError('Payment verification failed');
+            setLoading(false);
+          }
+        },
+        prefill: {
+          name: address.fullName,
+          contact: address.phone,
+        },
+        theme: {
+          color: '#FFD814',
+        },
+      };
+
+      // Step 4: Open Razorpay payment gateway
+      const razorpay = new window.Razorpay(options);
+      razorpay.on('payment.failed', function (response) {
+        setError('Payment failed. Please try again.');
+        setLoading(false);
+      });
+      razorpay.open();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to initiate payment');
+      setLoading(false);
+    }
+  };
+
   const placeOrderHandler = async () => {
     setLoading(true);
     setError(null);
+    
     try {
+      // Create order in database
       const { data } = await axios.post(
         'http://localhost:5000/api/orders',
         {
@@ -75,8 +147,15 @@ const CheckoutPage = () => {
           },
         }
       );
-      clearCart();
-      navigate(`/order/${data._id}`);
+
+      // If payment method is COD, directly redirect
+      if (paymentMethod === 'COD') {
+        clearCart();
+        navigate(`/order/${data._id}`);
+      } else {
+        // For UPI or Card, open Razorpay
+        handleRazorpayPayment(data);
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to place order');
       setLoading(false);
@@ -253,9 +332,9 @@ const CheckoutPage = () => {
               <div style={styles.reviewSection}>
                 <p style={styles.reviewSectionTitle}>💳 Payment</p>
                 <p style={styles.reviewMeta}>
-                  {paymentMethod === 'COD' ? 'Cash on Delivery'
-                    : paymentMethod === 'UPI' ? 'UPI Payment'
-                    : 'Credit / Debit Card'}
+                  {paymentMethod === 'COD' ? '💵 Cash on Delivery'
+                    : paymentMethod === 'UPI' ? '📱 UPI Payment'
+                    : '💳 Credit / Debit Card'}
                 </p>
               </div>
               <div style={styles.btnRow}>
@@ -265,7 +344,7 @@ const CheckoutPage = () => {
                   style={styles.placeOrderBtn}
                   disabled={loading}
                 >
-                  {loading ? 'Placing Order...' : `🛒 Place Order · ₹${totalPrice.toLocaleString()}`}
+                  {loading ? 'Processing...' : `🛒 Place Order · ₹${totalPrice.toLocaleString()}`}
                 </button>
               </div>
             </div>
