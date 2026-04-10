@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { useWishlist } from '../context/WishlistContext';
 
 const Navbar = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
   const { cartItems } = useCart();
   const { userInfo, logout } = useAuth();
+  const { wishlistItems } = useWishlist();
 
   const totalItems = cartItems.reduce((acc, item) => acc + item.qty, 0);
 
@@ -38,12 +40,19 @@ const Navbar = () => {
           onChange={(e) => setSearchTerm(e.target.value)}
           style={styles.input}
         />
-        <button type='submit' style={styles.searchBtn}>
-          🔍
-        </button>
+        <button type='submit' style={styles.searchBtn}>🔍</button>
       </form>
 
       <div style={styles.links}>
+        {/* Wishlist */}
+        <Link to='/wishlist' style={styles.link}>
+          ❤️ Wishlist
+          {wishlistItems.length > 0 && (
+            <span style={styles.badge}>{wishlistItems.length}</span>
+          )}
+        </Link>
+
+        {/* Cart */}
         <Link to='/cart' style={styles.link}>
           🛒 Cart
           {totalItems > 0 && (
@@ -53,10 +62,10 @@ const Navbar = () => {
 
         {userInfo ? (
           <>
-            <Link to='/myorders' style={styles.link}>
-              📦 My Orders
-            </Link>
             <span style={styles.username}>👤 {userInfo.name}</span>
+            {userInfo.isAdmin && (
+              <Link to='/admin' style={styles.adminLink}>Admin</Link>
+            )}
             <button onClick={logoutHandler} style={styles.logoutBtn}>
               Logout
             </button>
@@ -88,11 +97,7 @@ const styles = {
     fontWeight: 'bold',
     whiteSpace: 'nowrap',
   },
-  form: {
-    display: 'flex',
-    flex: 1,
-    maxWidth: '500px',
-  },
+  form: { display: 'flex', flex: 1, maxWidth: '500px' },
   input: {
     flex: 1,
     padding: '8px 12px',
@@ -135,6 +140,14 @@ const styles = {
     color: '#febd69',
     fontSize: '15px',
     fontWeight: 'bold',
+  },
+  adminLink: {
+    color: '#FFD814',
+    textDecoration: 'none',
+    fontSize: '14px',
+    border: '1px solid #FFD814',
+    padding: '4px 10px',
+    borderRadius: '4px',
   },
   logoutBtn: {
     backgroundColor: 'transparent',
