@@ -22,7 +22,7 @@ function App() {
   return (
     <Router>
       <Navbar />
-      <main style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
+      <main style={mainStyle}>
         <Routes>
           <Route path='/' element={<HomePage />} />
           <Route path='/login' element={<LoginPage />} />
@@ -33,18 +33,25 @@ function App() {
           <Route path='/checkout' element={<CheckoutPage />} />
           <Route path='/order/:id' element={<OrderConfirmationPage />} />
           <Route path='/myorders' element={<MyOrdersPage />} />
+          <Route path='/wishlist' element={<WishlistPage />} />
           <Route path='/admin' element={<AdminDashboardPage />} />
           <Route path='/admin/products' element={<AdminProductsPage />} />
           <Route path='/admin/products/new' element={<AdminProductFormPage />} />
           <Route path='/admin/products/edit/:id' element={<AdminProductFormPage />} />
           <Route path='/admin/orders' element={<AdminOrdersPage />} />
           <Route path='/admin/users' element={<AdminUsersPage />} />
-          <Route path='/wishlist' element={<WishlistPage />} />
         </Routes>
       </main>
       <Footer />
     </Router>
   );
 }
+
+const mainStyle = {
+  maxWidth: '1200px',
+  margin: '0 auto',
+  padding: '28px 24px',
+  minHeight: 'calc(100vh - 68px)',
+};
 
 export default App;
