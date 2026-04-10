@@ -69,7 +69,7 @@ router.get('/products', adminProtect, async (req, res) => {
 // @route   POST /api/admin/products
 // @desc    Create a new product
 router.post('/products', adminProtect, async (req, res) => {
-  const { name, price, description, image, category, countInStock } = req.body;
+  const { name, price, description, image, category, brand, countInStock } = req.body;
 
   try {
     const product = new Product({
@@ -78,6 +78,7 @@ router.post('/products', adminProtect, async (req, res) => {
       description,
       image,
       category,
+      brand,
       countInStock,
       rating: 0,
       numReviews: 0,
@@ -161,6 +162,35 @@ router.put('/orders/:id/deliver', adminProtect, async (req, res) => {
     } else {
       res.status(404).json({ message: 'Order not found' });
     }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @route   GET /api/admin/users
+// @desc    Get all users
+router.get('/users', adminProtect, async (req, res) => {
+  try {
+    const users = await User.find({}).select('-password').sort({ createdAt: -1 });
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @route   DELETE /api/admin/users/:id
+// @desc    Delete a user
+router.delete('/users/:id', adminProtect, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    if (user.isAdmin) {
+      return res.status(400).json({ message: 'Cannot delete an admin user' });
+    }
+    await user.deleteOne();
+    res.json({ message: 'User removed' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
