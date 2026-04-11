@@ -3,19 +3,24 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { useWishlist } from '../context/WishlistContext';
 
 const ProductDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const { userInfo } = useAuth();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [qty, setQty] = useState(1);
+  const [activeTab, setActiveTab] = useState('description');
+  const [addedToCart, setAddedToCart] = useState(false);
 
   const [rating, setRating] = useState(5);
+  const [hoveredStar, setHoveredStar] = useState(0);
   const [comment, setComment] = useState('');
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewError, setReviewError] = useState(null);
@@ -34,11 +39,21 @@ const ProductDetailPage = () => {
 
   useEffect(() => {
     fetchProduct();
+    window.scrollTo(0, 0);
   }, [id]);
 
   const addToCartHandler = () => {
     addToCart(product, qty);
-    navigate('/cart');
+    setAddedToCart(true);
+    setTimeout(() => setAddedToCart(false), 2000);
+  };
+
+  const toggleWishlist = () => {
+    if (isInWishlist(product._id)) {
+      removeFromWishlist(product._id);
+    } else {
+      addToWishlist(product);
+    }
   };
 
   const submitReviewHandler = async (e) => {
@@ -46,7 +61,6 @@ const ProductDetailPage = () => {
     setReviewLoading(true);
     setReviewError(null);
     setReviewSuccess(false);
-
     try {
       await axios.post(
         `http://localhost:5000/api/products/${id}/reviews`,
@@ -56,182 +70,343 @@ const ProductDetailPage = () => {
       setReviewSuccess(true);
       setComment('');
       setRating(5);
-      fetchProduct(); // Refresh to show new review
+      fetchProduct();
     } catch (err) {
       setReviewError(err.response?.data?.message || 'Failed to submit review');
     }
     setReviewLoading(false);
   };
 
-  const renderStars = (value) => {
-    return [1, 2, 3, 4, 5].map((star) => (
-      <span key={star} style={{ color: star <= value ? '#f0a500' : '#ddd', fontSize: '18px' }}>
-        ★
-      </span>
+  const renderStars = (value, size = 16) =>
+    [1, 2, 3, 4, 5].map((star) => (
+      <span key={star} style={{ color: star <= Math.round(value) ? '#F5A623' : '#e0e0e0', fontSize: size }}>★</span>
     ));
-  };
 
-  if (loading) return <h2 style={{ textAlign: 'center' }}>Loading...</h2>;
-  if (error) return <h2 style={{ color: 'red', textAlign: 'center' }}>{error}</h2>;
+  if (loading) {
+    return (
+      <div style={styles.loadingBox}>
+        <div style={styles.loadingGrid}>
+          <div style={styles.loadingSkeleton} />
+          <div>
+            {[80, 50, 40, 90, 60].map((w, i) => (
+              <div key={i} style={{ ...styles.loadingLine, width: `${w}%`, marginBottom: 14 }} />
+            ))}
+          </div>
+          <div style={styles.loadingSkeleton} />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={styles.errorBox}>
+        <p style={{ fontSize: 48 }}>😕</p>
+        <h2 style={styles.errorTitle}>Product not found</h2>
+        <button onClick={() => navigate('/')} style={styles.backBtnSolid}>← Back to Products</button>
+      </div>
+    );
+  }
+
+  const wishlisted = isInWishlist(product._id);
 
   return (
     <div style={styles.container}>
-      <button onClick={() => navigate('/')} style={styles.backBtn}>
-        ← Back to Products
-      </button>
 
-      {/* Product Info Section */}
-      <div style={styles.layout}>
-        {/* Image */}
-        <div style={styles.imageBox}>
-          <img src={product.image} alt={product.name} style={styles.image} />
-        </div>
+      {/* Breadcrumb */}
+      <div style={styles.breadcrumb}>
+        <span onClick={() => navigate('/')} style={styles.breadcrumbLink}>Home</span>
+        <span style={styles.breadcrumbSep}>›</span>
+        <span style={styles.breadcrumbLink} onClick={() => navigate(`/?category=${product.category}`)}>
+          {product.category}
+        </span>
+        <span style={styles.breadcrumbSep}>›</span>
+        <span style={styles.breadcrumbCurrent}>{product.name}</span>
+      </div>
 
-        {/* Info */}
-        <div style={styles.info}>
-          <h1 style={styles.name}>{product.name}</h1>
-          <p style={styles.brand}>Brand: {product.brand}</p>
-          <div style={styles.ratingRow}>
-            {renderStars(product.rating)}
-            <span style={styles.ratingText}>
-              {product.rating.toFixed(1)} ({product.numReviews} reviews)
-            </span>
+      {/* Main Product Layout */}
+      <div style={styles.mainLayout}>
+
+        {/* Left: Image */}
+        <div style={styles.imageSection}>
+          <div style={styles.imageWrapper}>
+            <img src={product.image} alt={product.name} style={styles.image} />
+            {product.countInStock === 0 && (
+              <div style={styles.outOfStockBadge}>Out of Stock</div>
+            )}
           </div>
-          <p style={styles.category}>Category: {product.category}</p>
-          <p style={styles.description}>{product.description}</p>
         </div>
 
-        {/* Buy Box */}
+        {/* Middle: Info */}
+        <div style={styles.infoSection}>
+          <p style={styles.brandLabel}>{product.brand}</p>
+          <h1 style={styles.productName}>{product.name}</h1>
+
+          {/* Rating Row */}
+          <div style={styles.ratingRow}>
+            <div style={styles.starsRow}>{renderStars(product.rating, 18)}</div>
+            <span style={styles.ratingNumber}>{product.rating.toFixed(1)}</span>
+            <span style={styles.ratingCount}>({product.numReviews} review{product.numReviews !== 1 ? 's' : ''})</span>
+          </div>
+
+          {/* Category Tag */}
+          <div style={styles.tagRow}>
+            <span style={styles.categoryTag}>{product.category}</span>
+            {product.countInStock > 0 && product.countInStock <= 5 && (
+              <span style={styles.lowStockTag}>Only {product.countInStock} left!</span>
+            )}
+          </div>
+
+          {/* Tabs */}
+          <div style={styles.tabs}>
+            {['description', 'details'].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                style={{
+                  ...styles.tab,
+                  borderBottom: activeTab === tab ? '2px solid #0f1923' : '2px solid transparent',
+                  color: activeTab === tab ? '#0f1923' : '#9ca3af',
+                  fontWeight: activeTab === tab ? '700' : '400',
+                }}
+              >
+                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              </button>
+            ))}
+          </div>
+
+          {activeTab === 'description' ? (
+            <p style={styles.description}>{product.description}</p>
+          ) : (
+            <div style={styles.detailsTable}>
+              {[
+                ['Brand', product.brand],
+                ['Category', product.category],
+                ['Availability', product.countInStock > 0 ? `${product.countInStock} in stock` : 'Out of stock'],
+                ['Rating', `${product.rating.toFixed(1)} / 5`],
+                ['Reviews', product.numReviews],
+              ].map(([key, val]) => (
+                <div key={key} style={styles.detailRow}>
+                  <span style={styles.detailKey}>{key}</span>
+                  <span style={styles.detailVal}>{val}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Right: Buy Box */}
         <div style={styles.buyBox}>
-          <p style={styles.price}>₹{product.price.toLocaleString()}</p>
-          <p style={styles.stock}>
-            Status:{' '}
-            <span style={{ color: product.countInStock > 0 ? 'green' : 'red' }}>
-              {product.countInStock > 0 ? 'In Stock' : 'Out of Stock'}
-            </span>
-          </p>
+          {/* Price */}
+          <div style={styles.priceSection}>
+            <p style={styles.price}>₹{product.price.toLocaleString()}</p>
+            <p style={styles.priceNote}>Inclusive of all taxes</p>
+          </div>
+
+          {/* Stock */}
+          <div style={{
+            ...styles.stockBadge,
+            backgroundColor: product.countInStock > 0 ? '#f0fdf4' : '#fef2f2',
+            color: product.countInStock > 0 ? '#16a34a' : '#dc2626',
+            border: `1px solid ${product.countInStock > 0 ? '#bbf7d0' : '#fecaca'}`,
+          }}>
+            {product.countInStock > 0 ? '✓ In Stock' : '✗ Out of Stock'}
+          </div>
+
           {product.countInStock > 0 && (
             <>
-              <div style={styles.qtyRow}>
-                <label style={styles.label}>Qty:</label>
-                <select
-                  value={qty}
-                  onChange={(e) => setQty(Number(e.target.value))}
-                  style={styles.select}
-                >
-                  {[...Array(Math.min(product.countInStock, 5)).keys()].map((x) => (
-                    <option key={x + 1} value={x + 1}>{x + 1}</option>
-                  ))}
-                </select>
+              {/* Qty */}
+              <div style={styles.qtySection}>
+                <label style={styles.qtyLabel}>Quantity</label>
+                <div style={styles.qtyControl}>
+                  <button
+                    onClick={() => qty > 1 && setQty(qty - 1)}
+                    style={{ ...styles.qtyBtn, opacity: qty <= 1 ? 0.4 : 1 }}
+                    disabled={qty <= 1}
+                  >−</button>
+                  <span style={styles.qtyDisplay}>{qty}</span>
+                  <button
+                    onClick={() => qty < Math.min(product.countInStock, 5) && setQty(qty + 1)}
+                    style={{ ...styles.qtyBtn, opacity: qty >= Math.min(product.countInStock, 5) ? 0.4 : 1 }}
+                    disabled={qty >= Math.min(product.countInStock, 5)}
+                  >+</button>
+                </div>
               </div>
-              <button onClick={addToCartHandler} style={styles.cartBtn}>
-                Add to Cart
+
+              {/* Add to Cart */}
+              <button
+                onClick={addToCartHandler}
+                style={{
+                  ...styles.cartBtn,
+                  backgroundColor: addedToCart ? '#16a34a' : '#0f1923',
+                  color: addedToCart ? '#fff' : '#FFD814',
+                }}
+              >
+                {addedToCart ? '✓ Added to Cart!' : '🛒 Add to Cart'}
+              </button>
+
+              {/* Go to Cart */}
+              <button
+                onClick={() => navigate('/cart')}
+                style={styles.goToCartBtn}
+              >
+                View Cart →
               </button>
             </>
           )}
+
+          {/* Wishlist */}
+          <button onClick={toggleWishlist} style={{
+            ...styles.wishlistBtn,
+            color: wishlisted ? '#e53935' : '#6b7280',
+            border: `1px solid ${wishlisted ? '#fecaca' : '#e5e7eb'}`,
+            backgroundColor: wishlisted ? '#fef2f2' : '#fafafa',
+          }}>
+            {wishlisted ? '❤️ Saved to Wishlist' : '🤍 Add to Wishlist'}
+          </button>
+
+          {/* Trust Row */}
+          <div style={styles.trustRow}>
+            <div style={styles.trustItem}>
+              <span style={styles.trustIcon}>🚚</span>
+              <span style={styles.trustText}>Free Delivery</span>
+            </div>
+            <div style={styles.trustItem}>
+              <span style={styles.trustIcon}>↩️</span>
+              <span style={styles.trustText}>Easy Returns</span>
+            </div>
+            <div style={styles.trustItem}>
+              <span style={styles.trustIcon}>🔒</span>
+              <span style={styles.trustText}>Secure Pay</span>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Reviews Section */}
       <div style={styles.reviewsSection}>
-        <h2 style={styles.reviewsTitle}>Customer Reviews</h2>
-
-        {/* Existing Reviews */}
-        {product.reviews.length === 0 ? (
-          <p style={styles.noReviews}>No reviews yet. Be the first to review!</p>
-        ) : (
-          <div style={styles.reviewsList}>
-            {product.reviews.map((review) => (
-              <div key={review._id} style={styles.reviewCard}>
-                <div style={styles.reviewHeader}>
-                  <div style={styles.reviewerAvatar}>
-                    {review.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <p style={styles.reviewerName}>{review.name}</p>
-                    <p style={styles.reviewDate}>
-                      {new Date(review.createdAt).toLocaleDateString('en-IN', {
-                        day: 'numeric', month: 'short', year: 'numeric',
-                      })}
-                    </p>
-                  </div>
-                  <div style={styles.reviewStars}>
-                    {renderStars(review.rating)}
-                  </div>
-                </div>
-                <p style={styles.reviewComment}>{review.comment}</p>
+        <div style={styles.reviewsHeader}>
+          <h2 style={styles.reviewsTitle}>Customer Reviews</h2>
+          {product.reviews.length > 0 && (
+            <div style={styles.ratingOverview}>
+              <span style={styles.bigRating}>{product.rating.toFixed(1)}</span>
+              <div>
+                <div style={styles.starsRow}>{renderStars(product.rating, 20)}</div>
+                <p style={styles.reviewCountText}>
+                  Based on {product.numReviews} review{product.numReviews !== 1 ? 's' : ''}
+                </p>
               </div>
-            ))}
-          </div>
-        )}
-
-        {/* Write a Review */}
-        <div style={styles.writeReview}>
-          <h3 style={styles.writeReviewTitle}>Write a Review</h3>
-
-          {!userInfo ? (
-            <p style={styles.loginPrompt}>
-              Please{' '}
-              <span
-                onClick={() => navigate('/login')}
-                style={styles.loginLink}
-              >
-                log in
-              </span>{' '}
-              to write a review.
-            </p>
-          ) : (
-            <form onSubmit={submitReviewHandler} style={styles.reviewForm}>
-              {reviewSuccess && (
-                <p style={styles.successMsg}>✅ Review submitted successfully!</p>
-              )}
-              {reviewError && (
-                <p style={styles.errorMsg}>{reviewError}</p>
-              )}
-
-              <div style={styles.formField}>
-                <label style={styles.formLabel}>Your Rating</label>
-                <div style={styles.starSelector}>
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <span
-                      key={star}
-                      onClick={() => setRating(star)}
-                      style={{
-                        fontSize: '28px',
-                        cursor: 'pointer',
-                        color: star <= rating ? '#f0a500' : '#ddd',
-                      }}
-                    >
-                      ★
-                    </span>
-                  ))}
-                  <span style={{ fontSize: '14px', color: '#888', marginLeft: '8px' }}>
-                    {rating}/5
-                  </span>
-                </div>
-              </div>
-
-              <div style={styles.formField}>
-                <label style={styles.formLabel}>Your Comment</label>
-                <textarea
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  style={styles.textarea}
-                  placeholder='Share your experience with this product...'
-                  rows={4}
-                  required
-                />
-              </div>
-
-              <button
-                type='submit'
-                style={styles.submitBtn}
-                disabled={reviewLoading}
-              >
-                {reviewLoading ? 'Submitting...' : '📝 Submit Review'}
-              </button>
-            </form>
+            </div>
           )}
+        </div>
+
+        <div style={styles.reviewsLayout}>
+          {/* Left: Reviews List */}
+          <div style={styles.reviewsList}>
+            {product.reviews.length === 0 ? (
+              <div style={styles.noReviewsBox}>
+                <p style={styles.noReviewsIcon}>💬</p>
+                <p style={styles.noReviewsText}>No reviews yet — be the first!</p>
+              </div>
+            ) : (
+              product.reviews.map((review) => (
+                <div key={review._id} style={styles.reviewCard}>
+                  <div style={styles.reviewTop}>
+                    <div style={styles.reviewAvatar}>
+                      {review.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div style={styles.reviewMeta}>
+                      <p style={styles.reviewerName}>{review.name}</p>
+                      <p style={styles.reviewDate}>
+                        {new Date(review.createdAt).toLocaleDateString('en-IN', {
+                          day: 'numeric', month: 'short', year: 'numeric',
+                        })}
+                      </p>
+                    </div>
+                    <div style={styles.reviewRating}>
+                      <div style={styles.starsRow}>{renderStars(review.rating, 14)}</div>
+                      <span style={styles.reviewRatingNum}>{review.rating}/5</span>
+                    </div>
+                  </div>
+                  <p style={styles.reviewComment}>{review.comment}</p>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Right: Write Review */}
+          <div style={styles.writeReviewBox}>
+            <h3 style={styles.writeReviewTitle}>Write a Review</h3>
+
+            {!userInfo ? (
+              <div style={styles.loginPromptBox}>
+                <p style={styles.loginPromptText}>
+                  Sign in to share your experience with this product.
+                </p>
+                <button
+                  onClick={() => navigate('/login')}
+                  style={styles.loginPromptBtn}
+                >
+                  Sign In to Review
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={submitReviewHandler} style={styles.reviewForm}>
+                {reviewSuccess && (
+                  <div style={styles.successMsg}>
+                    ✅ Review submitted successfully!
+                  </div>
+                )}
+                {reviewError && (
+                  <div style={styles.errorMsg}>⚠️ {reviewError}</div>
+                )}
+
+                <div style={styles.formField}>
+                  <label style={styles.formLabel}>Your Rating</label>
+                  <div style={styles.starSelector}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <span
+                        key={star}
+                        onClick={() => setRating(star)}
+                        onMouseEnter={() => setHoveredStar(star)}
+                        onMouseLeave={() => setHoveredStar(0)}
+                        style={{
+                          fontSize: '32px',
+                          cursor: 'pointer',
+                          color: star <= (hoveredStar || rating) ? '#F5A623' : '#e0e0e0',
+                          transition: 'color 0.1s',
+                        }}
+                      >★</span>
+                    ))}
+                    <span style={styles.ratingLabel}>
+                      {['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][hoveredStar || rating]}
+                    </span>
+                  </div>
+                </div>
+
+                <div style={styles.formField}>
+                  <label style={styles.formLabel}>Your Review</label>
+                  <textarea
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    style={styles.textarea}
+                    placeholder='Share your experience — what did you like or dislike?'
+                    rows={5}
+                    required
+                  />
+                  <p style={styles.charCount}>{comment.length} characters</p>
+                </div>
+
+                <button
+                  type='submit'
+                  style={{ ...styles.submitBtn, opacity: reviewLoading ? 0.8 : 1 }}
+                  disabled={reviewLoading}
+                >
+                  {reviewLoading ? 'Submitting...' : '📝 Submit Review'}
+                </button>
+              </form>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -239,82 +414,355 @@ const ProductDetailPage = () => {
 };
 
 const styles = {
-  container: { maxWidth: '1100px', margin: '0 auto' },
-  backBtn: {
-    background: 'none', border: '1px solid #ccc', padding: '8px 14px',
-    borderRadius: '6px', cursor: 'pointer', marginBottom: '20px', fontSize: '14px',
+  container: { maxWidth: '1200px', margin: '0 auto' },
+
+  // Loading
+  loadingBox: { padding: '40px 0' },
+  loadingGrid: {
+    display: 'grid', gridTemplateColumns: '1fr 1fr 300px',
+    gap: '30px',
   },
-  layout: { display: 'grid', gridTemplateColumns: '1fr 1fr 300px', gap: '30px', marginBottom: '40px' },
-  imageBox: { borderRadius: '8px', overflow: 'hidden' },
-  image: { width: '100%', borderRadius: '8px', objectFit: 'cover' },
-  info: { display: 'flex', flexDirection: 'column', gap: '10px' },
-  name: { fontSize: '22px', color: '#131921', margin: 0 },
-  brand: { color: '#555', margin: 0 },
-  ratingRow: { display: 'flex', alignItems: 'center', gap: '6px' },
-  ratingText: { fontSize: '14px', color: '#888' },
-  category: { color: '#555', margin: 0 },
-  description: { color: '#333', lineHeight: '1.6' },
+  loadingSkeleton: {
+    height: '380px', borderRadius: '16px',
+    backgroundColor: '#e0e0e0',
+    animation: 'pulse 1.5s ease-in-out infinite',
+  },
+  loadingLine: {
+    height: '16px', borderRadius: '8px',
+    backgroundColor: '#e0e0e0',
+    animation: 'pulse 1.5s ease-in-out infinite',
+  },
+
+  // Error
+  errorBox: {
+    textAlign: 'center', padding: '80px 20px',
+    backgroundColor: '#fff', borderRadius: '20px',
+  },
+  errorTitle: { fontSize: '24px', color: '#1a1a2e', margin: '0 0 20px' },
+  backBtnSolid: {
+    backgroundColor: '#0f1923', color: '#FFD814',
+    border: 'none', padding: '12px 28px',
+    borderRadius: '10px', fontWeight: '700',
+    fontSize: '14px', cursor: 'pointer',
+    fontFamily: 'Poppins, sans-serif',
+  },
+
+  // Breadcrumb
+  breadcrumb: {
+    display: 'flex', alignItems: 'center',
+    gap: '8px', marginBottom: '24px',
+  },
+  breadcrumbLink: {
+    fontSize: '13px', color: '#6b7280',
+    cursor: 'pointer', fontWeight: '500',
+  },
+  breadcrumbSep: { color: '#d1d5db', fontSize: '13px' },
+  breadcrumbCurrent: {
+    fontSize: '13px', color: '#1a1a2e',
+    fontWeight: '600',
+    maxWidth: '200px',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+
+  // Main Layout
+  mainLayout: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1.2fr 300px',
+    gap: '32px',
+    marginBottom: '48px',
+    alignItems: 'start',
+  },
+
+  // Image
+  imageSection: {},
+  imageWrapper: {
+    position: 'relative',
+    backgroundColor: '#f8f9fa',
+    borderRadius: '16px',
+    overflow: 'hidden',
+    border: '1px solid #f0f0f0',
+  },
+  image: { width: '100%', display: 'block', objectFit: 'cover', maxHeight: '420px' },
+  outOfStockBadge: {
+    position: 'absolute', top: '16px', left: '16px',
+    backgroundColor: 'rgba(0,0,0,0.7)', color: '#fff',
+    padding: '6px 14px', borderRadius: '20px',
+    fontSize: '12px', fontWeight: '600',
+  },
+
+  // Info
+  infoSection: { display: 'flex', flexDirection: 'column', gap: '14px' },
+  brandLabel: {
+    fontSize: '11px', fontWeight: '700',
+    color: '#9ca3af', textTransform: 'uppercase',
+    letterSpacing: '1px', margin: 0,
+  },
+  productName: {
+    fontSize: '26px', fontWeight: '800',
+    color: '#1a1a2e', margin: 0,
+    lineHeight: '1.3', letterSpacing: '-0.5px',
+  },
+  ratingRow: { display: 'flex', alignItems: 'center', gap: '8px' },
+  starsRow: { display: 'flex', gap: '2px' },
+  ratingNumber: { fontSize: '15px', fontWeight: '700', color: '#F5A623' },
+  ratingCount: { fontSize: '13px', color: '#9ca3af' },
+  tagRow: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
+  categoryTag: {
+    backgroundColor: '#eef2ff', color: '#4f46e5',
+    fontSize: '12px', fontWeight: '600',
+    padding: '4px 12px', borderRadius: '20px',
+  },
+  lowStockTag: {
+    backgroundColor: '#fef2f2', color: '#dc2626',
+    fontSize: '12px', fontWeight: '600',
+    padding: '4px 12px', borderRadius: '20px',
+    border: '1px solid #fecaca',
+  },
+
+  // Tabs
+  tabs: {
+    display: 'flex', gap: '0',
+    borderBottom: '1px solid #f0f0f0',
+  },
+  tab: {
+    padding: '10px 20px', fontSize: '14px',
+    background: 'none', border: 'none',
+    cursor: 'pointer', fontFamily: 'Poppins, sans-serif',
+    transition: 'all 0.2s',
+  },
+  description: {
+    fontSize: '14px', color: '#6b7280',
+    lineHeight: '1.8', margin: 0,
+  },
+  detailsTable: {
+    border: '1px solid #f0f0f0',
+    borderRadius: '10px', overflow: 'hidden',
+  },
+  detailRow: {
+    display: 'flex', padding: '12px 16px',
+    borderBottom: '1px solid #f9f9f9',
+    backgroundColor: '#fff',
+  },
+  detailKey: {
+    width: '120px', fontSize: '13px',
+    color: '#9ca3af', fontWeight: '600', flexShrink: 0,
+  },
+  detailVal: { fontSize: '13px', color: '#1a1a2e', fontWeight: '500' },
+
+  // Buy Box
   buyBox: {
-    border: '1px solid #ddd', borderRadius: '8px', padding: '20px',
-    display: 'flex', flexDirection: 'column', gap: '14px',
-    height: 'fit-content', boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+    backgroundColor: '#fff',
+    border: '1px solid #f0f0f0',
+    borderRadius: '16px',
+    padding: '24px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px',
+    boxShadow: '0 4px 24px rgba(0,0,0,0.07)',
+    position: 'sticky',
+    top: '88px',
   },
-  price: { fontSize: '26px', fontWeight: 'bold', color: '#B12704', margin: 0 },
-  stock: { fontSize: '15px', margin: 0 },
-  qtyRow: { display: 'flex', alignItems: 'center', gap: '10px' },
-  label: { fontSize: '15px' },
-  select: { padding: '6px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '14px' },
+  priceSection: {},
+  price: {
+    fontSize: '30px', fontWeight: '800',
+    color: '#1a1a2e', margin: '0 0 2px',
+    letterSpacing: '-1px',
+  },
+  priceNote: { fontSize: '11px', color: '#9ca3af', margin: 0 },
+  stockBadge: {
+    padding: '8px 14px', borderRadius: '8px',
+    fontSize: '13px', fontWeight: '600',
+    textAlign: 'center',
+  },
+  qtySection: {},
+  qtyLabel: {
+    fontSize: '12px', fontWeight: '700',
+    color: '#6b7280', textTransform: 'uppercase',
+    letterSpacing: '0.5px', display: 'block',
+    marginBottom: '8px',
+  },
+  qtyControl: {
+    display: 'flex', alignItems: 'center',
+    border: '1.5px solid #e5e7eb',
+    borderRadius: '10px', overflow: 'hidden',
+    width: 'fit-content',
+  },
+  qtyBtn: {
+    backgroundColor: '#f9fafb', border: 'none',
+    width: '38px', height: '40px',
+    fontSize: '20px', cursor: 'pointer',
+    fontWeight: '400', color: '#374151',
+    fontFamily: 'Poppins, sans-serif',
+  },
+  qtyDisplay: {
+    width: '44px', textAlign: 'center',
+    fontSize: '15px', fontWeight: '700',
+    color: '#1a1a2e',
+    borderLeft: '1px solid #e5e7eb',
+    borderRight: '1px solid #e5e7eb',
+    lineHeight: '40px',
+  },
   cartBtn: {
-    backgroundColor: '#FFD814', border: 'none', padding: '12px',
-    borderRadius: '8px', fontWeight: 'bold', fontSize: '15px',
-    cursor: 'pointer', color: '#131921',
+    width: '100%', border: 'none',
+    padding: '14px', borderRadius: '10px',
+    fontWeight: '700', fontSize: '15px',
+    cursor: 'pointer', letterSpacing: '0.3px',
+    fontFamily: 'Poppins, sans-serif',
+    transition: 'all 0.3s',
   },
-  reviewsSection: { borderTop: '2px solid #eee', paddingTop: '30px' },
-  reviewsTitle: { fontSize: '22px', marginBottom: '20px', color: '#131921' },
-  noReviews: { color: '#888', fontStyle: 'italic' },
-  reviewsList: { display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '30px' },
+  goToCartBtn: {
+    width: '100%', backgroundColor: '#fff',
+    border: '1.5px solid #e5e7eb', color: '#374151',
+    padding: '12px', borderRadius: '10px',
+    fontWeight: '600', fontSize: '14px',
+    cursor: 'pointer', fontFamily: 'Poppins, sans-serif',
+  },
+  wishlistBtn: {
+    width: '100%', padding: '11px',
+    borderRadius: '10px', fontSize: '13px',
+    fontWeight: '600', cursor: 'pointer',
+    fontFamily: 'Poppins, sans-serif',
+    transition: 'all 0.2s',
+  },
+  trustRow: {
+    display: 'flex', justifyContent: 'space-between',
+    paddingTop: '12px',
+    borderTop: '1px solid #f0f0f0',
+  },
+  trustItem: {
+    display: 'flex', flexDirection: 'column',
+    alignItems: 'center', gap: '4px',
+  },
+  trustIcon: { fontSize: '18px' },
+  trustText: { fontSize: '10px', color: '#9ca3af', fontWeight: '500', textAlign: 'center' },
+
+  // Reviews
+  reviewsSection: {
+    backgroundColor: '#fff',
+    borderRadius: '20px',
+    padding: '32px',
+    border: '1px solid #f0f0f0',
+    boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+  },
+  reviewsHeader: {
+    display: 'flex', justifyContent: 'space-between',
+    alignItems: 'center', marginBottom: '28px',
+  },
+  reviewsTitle: {
+    fontSize: '22px', fontWeight: '800',
+    color: '#1a1a2e', margin: 0,
+  },
+  ratingOverview: {
+    display: 'flex', alignItems: 'center', gap: '16px',
+    backgroundColor: '#f8f9fa', padding: '12px 20px',
+    borderRadius: '12px',
+  },
+  bigRating: {
+    fontSize: '40px', fontWeight: '800',
+    color: '#1a1a2e', lineHeight: 1,
+  },
+  reviewCountText: { fontSize: '12px', color: '#9ca3af', margin: '4px 0 0' },
+  reviewsLayout: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 360px',
+    gap: '32px',
+    alignItems: 'start',
+  },
+  reviewsList: { display: 'flex', flexDirection: 'column', gap: '16px' },
+  noReviewsBox: {
+    textAlign: 'center', padding: '40px',
+    backgroundColor: '#f8f9fa', borderRadius: '12px',
+  },
+  noReviewsIcon: { fontSize: '36px', margin: '0 0 8px' },
+  noReviewsText: { color: '#9ca3af', fontSize: '15px', margin: 0 },
   reviewCard: {
-    border: '1px solid #eee', borderRadius: '8px',
-    padding: '16px', backgroundColor: '#fff',
+    backgroundColor: '#f8f9fa',
+    borderRadius: '12px',
+    padding: '18px 20px',
+    border: '1px solid #f0f0f0',
   },
-  reviewHeader: { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' },
-  reviewerAvatar: {
-    width: '40px', height: '40px', borderRadius: '50%',
-    backgroundColor: '#131921', color: '#FFD814',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontWeight: 'bold', fontSize: '16px', flexShrink: 0,
+  reviewTop: {
+    display: 'flex', alignItems: 'center',
+    gap: '12px', marginBottom: '12px',
   },
-  reviewerName: { fontWeight: 'bold', margin: '0 0 2px', fontSize: '14px' },
-  reviewDate: { color: '#888', fontSize: '12px', margin: 0 },
-  reviewStars: { marginLeft: 'auto' },
-  reviewComment: { color: '#333', fontSize: '14px', margin: 0, lineHeight: '1.6' },
-  writeReview: {
-    backgroundColor: '#f7f8fa', border: '1px solid #eee',
-    borderRadius: '8px', padding: '24px',
+  reviewAvatar: {
+    width: '38px', height: '38px',
+    borderRadius: '50%', backgroundColor: '#0f1923',
+    color: '#FFD814', fontWeight: '800',
+    fontSize: '16px', display: 'flex',
+    alignItems: 'center', justifyContent: 'center',
+    flexShrink: 0,
   },
-  writeReviewTitle: { fontSize: '18px', marginBottom: '16px', color: '#131921' },
-  loginPrompt: { color: '#555', fontSize: '15px' },
-  loginLink: { color: '#0066c0', cursor: 'pointer', textDecoration: 'underline' },
+  reviewMeta: { flex: 1 },
+  reviewerName: { fontWeight: '700', margin: '0 0 2px', fontSize: '14px', color: '#1a1a2e' },
+  reviewDate: { color: '#9ca3af', fontSize: '12px', margin: 0 },
+  reviewRating: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' },
+  reviewRatingNum: { fontSize: '12px', color: '#F5A623', fontWeight: '700' },
+  reviewComment: {
+    color: '#4b5563', fontSize: '14px',
+    margin: 0, lineHeight: '1.7',
+  },
+
+  // Write Review
+  writeReviewBox: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: '16px', padding: '24px',
+    border: '1px solid #f0f0f0',
+    position: 'sticky', top: '88px',
+  },
+  writeReviewTitle: {
+    fontSize: '17px', fontWeight: '700',
+    color: '#1a1a2e', margin: '0 0 20px',
+  },
+  loginPromptBox: { textAlign: 'center', padding: '20px 0' },
+  loginPromptText: { color: '#6b7280', fontSize: '14px', marginBottom: '16px' },
+  loginPromptBtn: {
+    backgroundColor: '#0f1923', color: '#FFD814',
+    border: 'none', padding: '12px 24px',
+    borderRadius: '10px', fontWeight: '700',
+    fontSize: '14px', cursor: 'pointer',
+    fontFamily: 'Poppins, sans-serif',
+  },
   reviewForm: { display: 'flex', flexDirection: 'column', gap: '16px' },
   formField: { display: 'flex', flexDirection: 'column', gap: '6px' },
-  formLabel: { fontSize: '13px', fontWeight: 'bold', color: '#131921' },
-  starSelector: { display: 'flex', alignItems: 'center', gap: '4px' },
-  textarea: {
-    padding: '10px', borderRadius: '6px', border: '1px solid #ccc',
-    fontSize: '14px', outline: 'none', resize: 'vertical', fontFamily: 'inherit',
+  formLabel: {
+    fontSize: '12px', fontWeight: '700',
+    color: '#374151', textTransform: 'uppercase',
+    letterSpacing: '0.5px',
   },
+  starSelector: { display: 'flex', alignItems: 'center', gap: '4px' },
+  ratingLabel: {
+    fontSize: '13px', color: '#F5A623',
+    fontWeight: '600', marginLeft: '8px',
+  },
+  textarea: {
+    padding: '12px 14px', borderRadius: '10px',
+    border: '1.5px solid #e5e7eb', fontSize: '14px',
+    outline: 'none', resize: 'vertical',
+    fontFamily: 'Poppins, sans-serif',
+    backgroundColor: '#fff', lineHeight: '1.6',
+  },
+  charCount: { fontSize: '11px', color: '#9ca3af', margin: 0, textAlign: 'right' },
   submitBtn: {
-    backgroundColor: '#FFD814', border: 'none', padding: '12px 24px',
-    borderRadius: '8px', fontWeight: 'bold', fontSize: '15px',
-    cursor: 'pointer', color: '#131921', alignSelf: 'flex-start',
+    backgroundColor: '#0f1923', color: '#FFD814',
+    border: 'none', padding: '13px 24px',
+    borderRadius: '10px', fontWeight: '700',
+    fontSize: '14px', cursor: 'pointer',
+    fontFamily: 'Poppins, sans-serif',
+    transition: 'opacity 0.2s',
   },
   successMsg: {
-    backgroundColor: '#e6f4ea', border: '1px solid #a8d5b5',
-    color: '#1a5c2a', padding: '10px', borderRadius: '6px', fontSize: '14px',
+    backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0',
+    color: '#16a34a', padding: '12px 16px',
+    borderRadius: '10px', fontSize: '14px',
+    fontWeight: '500',
   },
   errorMsg: {
-    backgroundColor: '#fff0f0', border: '1px solid #f5c6c6',
-    color: '#B12704', padding: '10px', borderRadius: '6px', fontSize: '14px',
+    backgroundColor: '#fef2f2', border: '1px solid #fecaca',
+    color: '#dc2626', padding: '12px 16px',
+    borderRadius: '10px', fontSize: '14px',
   },
 };
 
