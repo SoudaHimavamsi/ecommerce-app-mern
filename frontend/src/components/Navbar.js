@@ -38,7 +38,7 @@ const Navbar = () => {
         <Link to='/' style={styles.brand}>
           <span style={styles.brandIcon}>S</span>
           <span style={styles.brandText}>
-            Shop<span style={styles.brandAccent}>Clone</span>
+            Snap<span style={styles.brandAccent}>Kart</span>
           </span>
         </Link>
 

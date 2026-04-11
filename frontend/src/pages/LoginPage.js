@@ -44,7 +44,7 @@ const LoginPage = () => {
         <div style={styles.leftContent}>
           <Link to='/' style={styles.brandLink}>
             <div style={styles.brandIconBox}>S</div>
-            <span style={styles.brandName}>ShopClone</span>
+            <span style={styles.brandName}>SnapKart</span>
           </Link>
           <h2 style={styles.leftTitle}>
             Your favourite<br />
@@ -77,7 +77,7 @@ const LoginPage = () => {
         <div style={styles.formCard}>
           <div style={styles.formHeader}>
             <h1 style={styles.formTitle}>Welcome back 👋</h1>
-            <p style={styles.formSubtitle}>Sign in to your ShopClone account</p>
+            <p style={styles.formSubtitle}>Sign in to your SnapKart account</p>
           </div>
 
           {error && (
@@ -147,7 +147,7 @@ const LoginPage = () => {
 
           <div style={styles.dividerRow}>
             <div style={styles.dividerLine} />
-            <span style={styles.dividerText}>New to ShopClone?</span>
+            <span style={styles.dividerText}>New to SnapKart?</span>
             <div style={styles.dividerLine} />
           </div>
 

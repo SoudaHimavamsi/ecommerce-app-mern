@@ -69,7 +69,7 @@ const CheckoutPage = () => {
         key: paymentOrder.keyId,
         amount: paymentOrder.amount,
         currency: paymentOrder.currency,
-        name: 'ShopClone',
+        name: 'SnapKart',
         description: 'Order Payment',
         order_id: paymentOrder.orderId,
         handler: async function (response) {

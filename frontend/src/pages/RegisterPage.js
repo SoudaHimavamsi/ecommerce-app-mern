@@ -50,7 +50,7 @@ const RegisterPage = () => {
         <div style={styles.leftContent}>
           <Link to='/' style={styles.brandLink}>
             <div style={styles.brandIconBox}>S</div>
-            <span style={styles.brandName}>ShopClone</span>
+            <span style={styles.brandName}>SnapKart</span>
           </Link>
           <h2 style={styles.leftTitle}>
             Join thousands of<br />
@@ -82,7 +82,7 @@ const RegisterPage = () => {
         <div style={styles.formCard}>
           <div style={styles.formHeader}>
             <h1 style={styles.formTitle}>Create account ✨</h1>
-            <p style={styles.formSubtitle}>Join ShopClone — it's free!</p>
+            <p style={styles.formSubtitle}>Join SnapKart — it's free!</p>
           </div>
 
           {error && (

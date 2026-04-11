@@ -14,7 +14,7 @@ const Footer = () => {
             <Link to='/' style={styles.brand}>
               <div style={styles.brandIcon}>S</div>
               <span style={styles.brandText}>
-                Shop<span style={styles.brandAccent}>Clone</span>
+                Snap<span style={styles.brandAccent}>Kart</span>
               </span>
             </Link>
             <p style={styles.brandTagline}>
@@ -78,7 +78,7 @@ const Footer = () => {
         {/* Bottom Bar */}
         <div style={styles.bottomBar}>
           <p style={styles.copyright}>
-            © {new Date().getFullYear()} ShopClone — Built with ❤️ by{' '}
+            © {new Date().getFullYear()} SnapKart — Built with ❤️ by{' '}
             <span style={styles.authorName}>Himavamsi</span>
           </p>
           <div style={styles.bottomLinks}>
