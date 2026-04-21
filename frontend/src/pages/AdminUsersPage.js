@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../config/api';
 import { useAuth } from '../context/AuthContext';
 
 const AdminUsersPage = () => {
@@ -22,8 +22,8 @@ const AdminUsersPage = () => {
 
   const fetchUsers = async () => {
     try {
-      const { data } = await axios.get(
-        'http://localhost:5000/api/admin/users',
+      const { data } = await api.get(
+        '/api/admin/users',
         { headers: { Authorization: `Bearer ${userInfo.token}` } }
       );
       setUsers(data);
@@ -38,8 +38,8 @@ const AdminUsersPage = () => {
     if (window.confirm(`Are you sure you want to delete user "${name}"?`)) {
       setDeleting(id);
       try {
-        await axios.delete(
-          `http://localhost:5000/api/admin/users/${id}`,
+        await api.delete(
+          `/api/admin/users/${id}`,
           { headers: { Authorization: `Bearer ${userInfo.token}` } }
         );
         fetchUsers();

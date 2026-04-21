@@ -5,6 +5,15 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
+// ── Environment variable validation ─────────────────────────────────────────
+const REQUIRED_ENV_VARS = ['MONGO_URI', 'JWT_SECRET'];
+const missing = REQUIRED_ENV_VARS.filter((key) => !process.env[key]);
+if (missing.length > 0) {
+  console.error(`❌ Missing required environment variables: ${missing.join(', ')}`);
+  process.exit(1);
+}
+// ────────────────────────────────────────────────────────────────────────────
+
 const app = express();
 
 app.use(cors());
@@ -22,26 +31,21 @@ app.get('/', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
+// NOTE: /myorders is defined before /:id inside orderRoutes.js — keep it that way
 app.use('/api/orders', orderRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/admin', adminRoutes);
 
 const PORT = process.env.PORT || 5000;
-const MONGO_URI = process.env.MONGO_URI;
-
-if (!MONGO_URI) {
-  console.error('❌ MONGO_URI is not defined in environment variables');
-  process.exit(1);
-}
 
 // Start server immediately so Render detects the open port
 app.listen(PORT, () => {
-  console.log(`✅ Server running on http://localhost:${PORT}`);
+  console.log(`✅ Server running on port ${PORT}`);
 });
 
-// Connect to MongoDB separately
+// Connect to MongoDB separately (server is already listening so Render won't time out)
 mongoose
-  .connect(MONGO_URI)
+  .connect(process.env.MONGO_URI)
   .then(() => {
     console.log('✅ MongoDB connected');
   })

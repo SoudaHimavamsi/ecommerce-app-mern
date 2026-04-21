@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../config/api';
 import { useAuth } from '../context/AuthContext';
 
 const AdminProductsPage = () => {
@@ -22,8 +22,8 @@ const AdminProductsPage = () => {
 
   const fetchProducts = async () => {
     try {
-      const { data } = await axios.get(
-        'http://localhost:5000/api/admin/products',
+      const { data } = await api.get(
+        '/api/admin/products',
         {
           headers: { Authorization: `Bearer ${userInfo.token}` },
         }
@@ -39,8 +39,8 @@ const AdminProductsPage = () => {
   const deleteHandler = async (id, name) => {
     if (window.confirm(`Are you sure you want to delete "${name}"?`)) {
       try {
-        await axios.delete(
-          `http://localhost:5000/api/admin/products/${id}`,
+        await api.delete(
+          `/api/admin/products/${id}`,
           {
             headers: { Authorization: `Bearer ${userInfo.token}` },
           }

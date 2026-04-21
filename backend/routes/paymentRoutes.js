@@ -17,6 +17,12 @@ const protect = async (req, res, next) => {
       token = req.headers.authorization.split(' ')[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       req.user = await User.findById(decoded.id).select('-password');
+
+      // FIX: null check — user may have been deleted after token was issued
+      if (!req.user) {
+        return res.status(401).json({ message: 'Not authorized, user not found' });
+      }
+
       next();
     } catch (error) {
       res.status(401).json({ message: 'Not authorized, token failed' });
@@ -45,7 +51,7 @@ router.post('/create-order', protect, async (req, res) => {
     };
 
     const order = await razorpay.orders.create(options);
-    
+
     res.json({
       orderId: order.id,
       amount: order.amount,
@@ -64,7 +70,7 @@ router.post('/verify', protect, async (req, res) => {
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature, orderId } = req.body;
 
   try {
-    // Create signature
+    // Create expected signature
     const body = razorpay_order_id + '|' + razorpay_payment_id;
     const expectedSignature = crypto
       .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
@@ -73,9 +79,8 @@ router.post('/verify', protect, async (req, res) => {
 
     // Verify signature
     if (expectedSignature === razorpay_signature) {
-      // Payment is verified - update order
       const order = await Order.findById(orderId);
-      
+
       if (order) {
         order.isPaid = true;
         order.paidAt = Date.now();
@@ -84,13 +89,13 @@ router.post('/verify', protect, async (req, res) => {
           razorpay_payment_id,
           razorpay_signature,
         };
-        
+
         await order.save();
-        
-        res.json({ 
-          success: true, 
+
+        res.json({
+          success: true,
           message: 'Payment verified successfully',
-          order 
+          order,
         });
       } else {
         res.status(404).json({ message: 'Order not found' });

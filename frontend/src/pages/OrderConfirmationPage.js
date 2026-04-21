@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../config/api';
 import { useAuth } from '../context/AuthContext';
 
 const OrderConfirmationPage = () => {
@@ -20,8 +20,8 @@ const OrderConfirmationPage = () => {
 
     const fetchOrder = async () => {
       try {
-        const { data } = await axios.get(
-          `http://localhost:5000/api/orders/${id}`,
+        const { data } = await api.get(
+          `/api/orders/${id}`,
           {
             headers: { Authorization: `Bearer ${userInfo.token}` },
           }

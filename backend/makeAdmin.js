@@ -9,8 +9,16 @@ const makeAdmin = async () => {
     await mongoose.connect(process.env.MONGO_URI);
     console.log('✅ MongoDB connected');
 
-    // Replace with your email
-    const email = 'vamsihima71@gmail.com'; // CHANGE THIS TO YOUR ACTUAL EMAIL
+    // Use ADMIN_EMAIL env variable, or pass as a command-line argument:
+    //   node makeAdmin.js someone@example.com
+    const email = process.argv[2] || process.env.ADMIN_EMAIL;
+
+    if (!email) {
+      console.error('❌ No email provided.');
+      console.error('   Usage:  node makeAdmin.js <email>');
+      console.error('   Or set: ADMIN_EMAIL=your@email.com in .env');
+      process.exit(1);
+    }
 
     const user = await User.findOne({ email });
 

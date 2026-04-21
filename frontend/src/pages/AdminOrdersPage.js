@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../config/api';
 import { useAuth } from '../context/AuthContext';
 
 const AdminOrdersPage = () => {
@@ -22,8 +22,8 @@ const AdminOrdersPage = () => {
 
   const fetchOrders = async () => {
     try {
-      const { data } = await axios.get(
-        'http://localhost:5000/api/admin/orders',
+      const { data } = await api.get(
+        '/api/admin/orders',
         { headers: { Authorization: `Bearer ${userInfo.token}` } }
       );
       setOrders(data);
@@ -37,8 +37,8 @@ const AdminOrdersPage = () => {
   const markDeliveredHandler = async (orderId) => {
     setDelivering(orderId);
     try {
-      await axios.put(
-        `http://localhost:5000/api/admin/orders/${orderId}/deliver`,
+      await api.put(
+        `/api/admin/orders/${orderId}/deliver`,
         {},
         { headers: { Authorization: `Bearer ${userInfo.token}` } }
       );

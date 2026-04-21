@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../config/api';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 
@@ -60,8 +60,8 @@ const CheckoutPage = () => {
 
   const handleRazorpayPayment = async (orderData) => {
     try {
-      const { data: paymentOrder } = await axios.post(
-        'http://localhost:5000/api/payment/create-order',
+      const { data: paymentOrder } = await api.post(
+        '/api/payment/create-order',
         { amount: totalPrice },
         { headers: { Authorization: `Bearer ${userInfo.token}` } }
       );
@@ -74,8 +74,8 @@ const CheckoutPage = () => {
         order_id: paymentOrder.orderId,
         handler: async function (response) {
           try {
-            await axios.post(
-              'http://localhost:5000/api/payment/verify',
+            await api.post(
+              '/api/payment/verify',
               {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
@@ -110,8 +110,8 @@ const CheckoutPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await axios.post(
-        'http://localhost:5000/api/orders',
+      const { data } = await api.post(
+        '/api/orders',
         {
           orderItems: cartItems.map((item) => ({
             name: item.name, qty: item.qty,

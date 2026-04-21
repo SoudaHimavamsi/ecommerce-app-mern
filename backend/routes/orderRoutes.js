@@ -15,6 +15,12 @@ const protect = async (req, res, next) => {
       token = req.headers.authorization.split(' ')[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       req.user = await User.findById(decoded.id).select('-password');
+
+      // FIX: null check — user may have been deleted after token was issued
+      if (!req.user) {
+        return res.status(401).json({ message: 'Not authorized, user not found' });
+      }
+
       next();
     } catch (error) {
       res.status(401).json({ message: 'Not authorized, token failed' });
@@ -51,6 +57,7 @@ router.post('/', protect, async (req, res) => {
 
 // @route   GET /api/orders/myorders
 // @desc    Get logged in user's orders
+// IMPORTANT: This route must stay ABOVE /:id to avoid route conflict
 router.get('/myorders', protect, async (req, res) => {
   try {
     const orders = await Order.find({ user: req.user._id }).sort({

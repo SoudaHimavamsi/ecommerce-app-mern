@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../config/api';
 import { useAuth } from '../context/AuthContext';
 
 const AdminDashboardPage = () => {
@@ -14,8 +14,8 @@ const AdminDashboardPage = () => {
     if (!userInfo) { navigate('/login'); return; }
     const fetchStats = async () => {
       try {
-        const { data } = await axios.get(
-          'http://localhost:5000/api/admin/dashboard',
+        const { data } = await api.get(
+          '/api/admin/dashboard',
           { headers: { Authorization: `Bearer ${userInfo.token}` } }
         );
         setStats(data);

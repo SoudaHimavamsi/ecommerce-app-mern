@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import axios from 'axios';
+import api from '../config/api';
 import { useAuth } from '../context/AuthContext';
 
 const AdminProductFormPage = () => {
@@ -32,8 +32,8 @@ const AdminProductFormPage = () => {
     if (isEditing) {
       const fetchProduct = async () => {
         try {
-          const { data } = await axios.get(
-            `http://localhost:5000/api/admin/products`,
+          const { data } = await api.get(
+            `/api/admin/products`,
             { headers: { Authorization: `Bearer ${userInfo.token}` } }
           );
           const product = data.find((p) => p._id === id);
@@ -69,14 +69,14 @@ const AdminProductFormPage = () => {
 
     try {
       if (isEditing) {
-        await axios.put(
-          `http://localhost:5000/api/admin/products/${id}`,
+        await api.put(
+          `/api/admin/products/${id}`,
           formData,
           { headers: { Authorization: `Bearer ${userInfo.token}` } }
         );
       } else {
-        await axios.post(
-          `http://localhost:5000/api/admin/products`,
+        await api.post(
+          `/api/admin/products`,
           formData,
           { headers: { Authorization: `Bearer ${userInfo.token}` } }
         );

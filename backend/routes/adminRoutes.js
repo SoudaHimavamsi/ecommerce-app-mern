@@ -16,12 +16,12 @@ const adminProtect = async (req, res, next) => {
       token = req.headers.authorization.split(' ')[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       req.user = await User.findById(decoded.id).select('-password');
-      
-      // Check if user is admin
-      if (!req.user.isAdmin) {
+
+      // FIX: null check — user may have been deleted after token was issued
+      if (!req.user || !req.user.isAdmin) {
         return res.status(403).json({ message: 'Access denied. Admin only.' });
       }
-      
+
       next();
     } catch (error) {
       res.status(401).json({ message: 'Not authorized, token failed' });
@@ -38,7 +38,7 @@ router.get('/dashboard', adminProtect, async (req, res) => {
     const totalProducts = await Product.countDocuments();
     const totalOrders = await Order.countDocuments();
     const totalUsers = await User.countDocuments();
-    
+
     const totalRevenue = await Order.aggregate([
       { $match: { isPaid: true } },
       { $group: { _id: null, total: { $sum: '$totalPrice' } } },

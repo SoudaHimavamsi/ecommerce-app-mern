@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../config/api';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useWishlist } from '../context/WishlistContext';
@@ -28,7 +28,7 @@ const ProductDetailPage = () => {
 
   const fetchProduct = async () => {
     try {
-      const { data } = await axios.get(`http://localhost:5000/api/products/${id}`);
+      const { data } = await api.get(`/api/products/${id}`);
       setProduct(data);
       setLoading(false);
     } catch (err) {
@@ -62,8 +62,8 @@ const ProductDetailPage = () => {
     setReviewError(null);
     setReviewSuccess(false);
     try {
-      await axios.post(
-        `http://localhost:5000/api/products/${id}/reviews`,
+      await api.post(
+        `/api/products/${id}/reviews`,
         { rating, comment },
         { headers: { Authorization: `Bearer ${userInfo.token}` } }
       );

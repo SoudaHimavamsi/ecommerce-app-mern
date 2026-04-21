@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../config/api';
 import { useAuth } from '../context/AuthContext';
 
 const LoginPage = () => {
@@ -19,14 +19,14 @@ const LoginPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await axios.post(
-        'http://localhost:5000/api/auth/login',
-        { email, password }
-      );
+      const { data } = await api.post('/api/auth/login', { email, password });
       login(data);
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.message || 'Invalid email or password');
+    } finally {
+      // FIX: always reset loading — previously only reset on error,
+      // leaving the button stuck in loading state after a successful login
       setLoading(false);
     }
   };

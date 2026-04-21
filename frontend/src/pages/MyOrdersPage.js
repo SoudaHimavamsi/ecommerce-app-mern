@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../config/api';
 import { useAuth } from '../context/AuthContext';
 
 const MyOrdersPage = () => {
@@ -15,8 +15,8 @@ const MyOrdersPage = () => {
     if (!userInfo) { navigate('/login'); return; }
     const fetchOrders = async () => {
       try {
-        const { data } = await axios.get(
-          'http://localhost:5000/api/orders/myorders',
+        const { data } = await api.get(
+          '/api/orders/myorders',
           { headers: { Authorization: `Bearer ${userInfo.token}` } }
         );
         setOrders(data);
