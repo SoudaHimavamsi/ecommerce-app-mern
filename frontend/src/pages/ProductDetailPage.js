@@ -111,10 +111,10 @@ const ProductDetailPage = () => {
   const wishlisted = isInWishlist(product._id);
 
   return (
-    <div style={styles.container}>
+    <div className="sk-product-container" style={styles.container}>
 
       {/* Breadcrumb */}
-      <div style={styles.breadcrumb}>
+      <div className="sk-breadcrumb" style={styles.breadcrumb}>
         <span onClick={() => navigate('/')} style={styles.breadcrumbLink}>Home</span>
         <span style={styles.breadcrumbSep}>›</span>
         <span style={styles.breadcrumbLink} onClick={() => navigate(`/?category=${product.category}`)}>
@@ -125,12 +125,12 @@ const ProductDetailPage = () => {
       </div>
 
       {/* Main Product Layout */}
-      <div style={styles.mainLayout}>
+      <div className="sk-product-layout" style={styles.mainLayout}>
 
         {/* Left: Image */}
         <div style={styles.imageSection}>
           <div style={styles.imageWrapper}>
-            <img src={product.image} alt={product.name} style={styles.image} />
+            <img src={product.image} alt={product.name} className="sk-product-image" style={styles.image} />
             {product.countInStock === 0 && (
               <div style={styles.outOfStockBadge}>Out of Stock</div>
             )}
@@ -140,7 +140,7 @@ const ProductDetailPage = () => {
         {/* Middle: Info */}
         <div style={styles.infoSection}>
           <p style={styles.brandLabel}>{product.brand}</p>
-          <h1 style={styles.productName}>{product.name}</h1>
+          <h1 className="sk-product-name" style={styles.productName}>{product.name}</h1>
 
           {/* Rating Row */}
           <div style={styles.ratingRow}>
@@ -196,10 +196,10 @@ const ProductDetailPage = () => {
         </div>
 
         {/* Right: Buy Box */}
-        <div style={styles.buyBox}>
+        <div className="sk-buy-box" style={styles.buyBox}>
           {/* Price */}
           <div style={styles.priceSection}>
-            <p style={styles.price}>₹{product.price.toLocaleString()}</p>
+            <p className="sk-price" style={styles.price}>₹{product.price.toLocaleString()}</p>
             <p style={styles.priceNote}>Inclusive of all taxes</p>
           </div>
 
@@ -248,7 +248,7 @@ const ProductDetailPage = () => {
               {/* Go to Cart */}
               <button
                 onClick={() => navigate('/cart')}
-                style={styles.goToCartBtn}
+                className="sk-go-to-cart-btn" style={styles.goToCartBtn}
               >
                 View Cart →
               </button>
@@ -284,8 +284,8 @@ const ProductDetailPage = () => {
       </div>
 
       {/* Reviews Section */}
-      <div style={styles.reviewsSection}>
-        <div style={styles.reviewsHeader}>
+      <div className="sk-reviews-section" style={styles.reviewsSection}>
+        <div className="sk-reviews-header" style={styles.reviewsHeader}>
           <h2 style={styles.reviewsTitle}>Customer Reviews</h2>
           {product.reviews.length > 0 && (
             <div style={styles.ratingOverview}>
@@ -300,7 +300,7 @@ const ProductDetailPage = () => {
           )}
         </div>
 
-        <div style={styles.reviewsLayout}>
+        <div className="sk-reviews-layout" style={styles.reviewsLayout}>
           {/* Left: Reviews List */}
           <div style={styles.reviewsList}>
             {product.reviews.length === 0 ? (
@@ -335,7 +335,7 @@ const ProductDetailPage = () => {
           </div>
 
           {/* Right: Write Review */}
-          <div style={styles.writeReviewBox}>
+          <div className="sk-write-review-box" style={styles.writeReviewBox}>
             <h3 style={styles.writeReviewTitle}>Write a Review</h3>
 
             {!userInfo ? (

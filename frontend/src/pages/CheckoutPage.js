@@ -152,7 +152,7 @@ const CheckoutPage = () => {
 
       {/* Page Header */}
       <div style={styles.pageHeader}>
-        <h1 style={styles.heading}>Checkout</h1>
+        <h1 className="sk-checkout-heading" style={styles.heading}>Checkout</h1>
         <p style={styles.subheading}>{totalItems} item{totalItems !== 1 ? 's' : ''} · ₹{totalPrice.toLocaleString()}</p>
       </div>
 
@@ -164,7 +164,7 @@ const CheckoutPage = () => {
       )}
 
       {/* Step Indicator */}
-      <div style={styles.stepBar}>
+      <div className="sk-step-bar" style={styles.stepBar}>
         {STEPS.map((label, i) => {
           const stepNum = i + 1;
           const isCompleted = step > stepNum;
@@ -203,10 +203,10 @@ const CheckoutPage = () => {
       </div>
 
       {/* Main Layout */}
-      <div style={styles.layout}>
+      <div className="sk-checkout-layout" style={styles.layout}>
 
         {/* Left: Form */}
-        <div style={styles.formCard}>
+        <div className="sk-form-card" style={styles.formCard}>
 
           {/* Step 1: Shipping */}
           {step === 1 && (
@@ -219,7 +219,7 @@ const CheckoutPage = () => {
                 </div>
               </div>
 
-              <div style={styles.formGrid}>
+              <div className="sk-checkout-form-grid" style={styles.formGrid}>
                 <div style={styles.field}>
                   <label style={styles.label}>Full Name</label>
                   <input

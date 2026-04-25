@@ -122,10 +122,10 @@ const AdminDashboardPage = () => {
     <div style={styles.container}>
 
       {/* Header */}
-      <div style={styles.header}>
+      <div className="sk-admin-header" style={styles.header}>
         <div>
           <p style={styles.headerLabel}>Admin Panel</p>
-          <h1 style={styles.heading}>Dashboard</h1>
+          <h1 className="sk-admin-heading" style={styles.heading}>Dashboard</h1>
         </div>
         <div style={styles.headerRight}>
           <div style={styles.adminBadge}>
@@ -137,15 +137,15 @@ const AdminDashboardPage = () => {
               {userInfo.name.charAt(0).toUpperCase()}
             </div>
             <div>
-              <p style={styles.adminName}>{userInfo.name}</p>
-              <p style={styles.adminRole}>Administrator</p>
+              <p className="sk-admin-name" style={styles.adminName}>{userInfo.name}</p>
+              <p className="sk-admin-role" style={styles.adminRole}>Administrator</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Stat Cards */}
-      <div style={styles.statsGrid}>
+      <div className="sk-stats-grid" style={styles.statsGrid}>
         {statCards.map((card, i) => (
           <div key={i} style={styles.statCard}>
             <div style={styles.statCardTop}>
