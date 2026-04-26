@@ -17,6 +17,7 @@ import AdminProductFormPage from './pages/AdminProductFormPage';
 import AdminOrdersPage from './pages/AdminOrdersPage';
 import AdminUsersPage from './pages/AdminUsersPage';
 import WishlistPage from './pages/WishlistPage';
+import ProfilePage from './pages/ProfilePage';
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
           <Route path='/order/:id' element={<OrderConfirmationPage />} />
           <Route path='/myorders' element={<MyOrdersPage />} />
           <Route path='/wishlist' element={<WishlistPage />} />
+          <Route path='/profile' element={<ProfilePage />} />
           <Route path='/admin' element={<AdminDashboardPage />} />
           <Route path='/admin/products' element={<AdminProductsPage />} />
           <Route path='/admin/products/new' element={<AdminProductFormPage />} />
@@ -51,7 +53,7 @@ const mainStyle = {
   maxWidth: '1200px',
   margin: '0 auto',
   padding: '28px 24px',
-  minHeight: 'calc(100vh - 68px)',
+  minHeight: 'calc(100vh - 56px)',
 };
 
 export default App;
