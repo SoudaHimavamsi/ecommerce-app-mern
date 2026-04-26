@@ -3,32 +3,55 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../config/api';
 import { useAuth } from '../context/AuthContext';
 
+const ORDER_CSS = `
+  .sk-order-layout { display:grid; grid-template-columns:1fr 260px; gap:20px; align-items:start; }
+  .sk-order-section { border:1px solid #e5e7eb; border-radius:12px; padding:18px; margin-bottom:14px; background:#fff; }
+  .sk-order-success-header { display:flex; align-items:center; gap:14px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:16px; margin-bottom:20px; }
+  .sk-order-success-title { margin:0; font-size:18px; color:#15803d; font-weight:700; }
+  .sk-order-item { display:flex; gap:10px; align-items:flex-start; margin-bottom:12px; }
+  .sk-order-item-img { width:56px; height:56px; object-fit:cover; border-radius:6px; flex-shrink:0; }
+  .sk-order-item-name { font-weight:600; margin:0 0 4px; font-size:13px; word-break:break-word; }
+  .sk-order-item-meta { color:#6b7280; font-size:12px; margin:0; }
+  .sk-order-summary-price { white-space:nowrap; font-weight:600; }
+  .sk-summary-row { display:flex; justify-content:space-between; gap:8px; font-size:14px; padding:4px 0; }
+  .sk-order-btn { width:100%; background:#FFD814; border:none; padding:12px; border-radius:9px; font-weight:700; font-size:14px; cursor:pointer; color:#131921; margin-bottom:8px; }
+  .sk-order-outline-btn { width:100%; background:#fff; border:1px solid #e5e7eb; padding:12px; border-radius:9px; font-size:14px; cursor:pointer; }
+
+  @media (max-width: 640px) {
+    .sk-order-layout { grid-template-columns:1fr !important; gap:14px !important; }
+    .sk-order-section { padding:14px !important; }
+    .sk-order-success-header { padding:14px !important; gap:10px !important; }
+    .sk-order-success-title { font-size:15px !important; }
+    .sk-order-item-img { width:48px !important; height:48px !important; }
+  }
+`;
+
+let orderCssInjected = false;
+
 const OrderConfirmationPage = () => {
   const { id } = useParams();
   const { userInfo } = useAuth();
   const navigate = useNavigate();
-
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!userInfo) {
-      navigate('/login');
-      return;
+    if (!userInfo) { navigate('/login'); return; }
+    if (!orderCssInjected) {
+      const style = document.createElement('style');
+      style.textContent = ORDER_CSS;
+      document.head.appendChild(style);
+      orderCssInjected = true;
     }
-
     const fetchOrder = async () => {
       try {
-        const { data } = await api.get(
-          `/api/orders/${id}`,
-          {
-            headers: { Authorization: `Bearer ${userInfo.token}` },
-          }
-        );
+        const { data } = await api.get(`/api/orders/${id}`, {
+          headers: { Authorization: `Bearer ${userInfo.token}` },
+        });
         setOrder(data);
         setLoading(false);
-      } catch (err) {
+      } catch {
         setError('Could not load order');
         setLoading(false);
       }
@@ -36,32 +59,47 @@ const OrderConfirmationPage = () => {
     fetchOrder();
   }, [id, userInfo, navigate]);
 
-  if (loading) return <h2 style={{ textAlign: 'center' }}>Loading order...</h2>;
-  if (error) return <h2 style={{ color: 'red', textAlign: 'center' }}>{error}</h2>;
+  if (loading) return <h2 style={{ textAlign: 'center', padding: '60px' }}>Loading order...</h2>;
+  if (error) return <h2 style={{ color: 'red', textAlign: 'center', padding: '60px' }}>{error}</h2>;
+
+  const badge = (isPaid, paidLabel, pendingLabel) => (
+    <span style={{
+      display: 'inline-block', padding: '3px 10px', borderRadius: '20px',
+      fontSize: '12px', marginTop: '6px',
+      backgroundColor: isPaid ? '#f0fdf4' : '#fff7ed',
+      color: isPaid ? '#15803d' : '#c2410c',
+    }}>
+      {isPaid ? `✅ ${paidLabel}` : `⏳ ${pendingLabel}`}
+    </span>
+  );
 
   return (
-    <div style={styles.container}>
-      {/* Success Header */}
-      <div style={styles.successHeader}>
-        <span style={styles.checkIcon}>✅</span>
-        <div>
-          <h2 style={styles.successTitle}>Order Placed Successfully!</h2>
-          <p style={styles.orderId}>Order ID: <strong>{order._id}</strong></p>
+    <div style={{ maxWidth: '960px', margin: '0 auto' }}>
+
+      {/* Success banner */}
+      <div className='sk-order-success-header'>
+        <span style={{ fontSize: '32px', flexShrink: 0 }}>✅</span>
+        <div style={{ minWidth: 0 }}>
+          <h2 className='sk-order-success-title'>Order Placed Successfully!</h2>
+          <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#6b7280', wordBreak: 'break-all' }}>
+            Order ID: <strong>{order._id}</strong>
+          </p>
         </div>
       </div>
 
-      <div style={styles.layout}>
-        {/* Left: Order Details */}
+      <div className='sk-order-layout'>
+
+        {/* Left column */}
         <div>
           {/* Items */}
-          <div style={styles.section}>
-            <h3 style={styles.sectionTitle}>📦 Items Ordered</h3>
+          <div className='sk-order-section'>
+            <h3 style={sectionTitle}>📦 Items Ordered</h3>
             {order.orderItems.map((item, i) => (
-              <div key={i} style={styles.item}>
-                <img src={item.image} alt={item.name} style={styles.itemImage} />
-                <div style={{ flex: 1 }}>
-                  <p style={styles.itemName}>{item.name}</p>
-                  <p style={styles.itemMeta}>
+              <div key={i} className='sk-order-item'>
+                <img src={item.image} alt={item.name} className='sk-order-item-img' />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p className='sk-order-item-name'>{item.name}</p>
+                  <p className='sk-order-item-meta'>
                     {item.qty} × ₹{item.price.toLocaleString()} ={' '}
                     <strong>₹{(item.qty * item.price).toLocaleString()}</strong>
                   </p>
@@ -71,91 +109,62 @@ const OrderConfirmationPage = () => {
           </div>
 
           {/* Shipping */}
-          <div style={styles.section}>
-            <h3 style={styles.sectionTitle}>🚚 Shipping Address</h3>
-            <p style={styles.infoText}>{order.shippingAddress.fullName}</p>
-            <p style={styles.infoText}>{order.shippingAddress.street}</p>
-            <p style={styles.infoText}>
-              {order.shippingAddress.city}, {order.shippingAddress.state} -{' '}
-              {order.shippingAddress.pincode}
-            </p>
-            <p style={styles.infoText}>📞 {order.shippingAddress.phone}</p>
-            <p style={{
-              ...styles.badge,
-              backgroundColor: order.isDelivered ? '#e6f4ea' : '#fff3e0',
-              color: order.isDelivered ? 'green' : '#e65100',
-            }}>
-              {order.isDelivered ? '✅ Delivered' : '⏳ Not Delivered Yet'}
-            </p>
+          <div className='sk-order-section'>
+            <h3 style={sectionTitle}>🚚 Shipping Address</h3>
+            <p style={infoText}><strong>{order.shippingAddress.fullName}</strong></p>
+            <p style={infoText}>{order.shippingAddress.street}</p>
+            <p style={infoText}>{order.shippingAddress.city}, {order.shippingAddress.state} — {order.shippingAddress.pincode}</p>
+            <p style={infoText}>📞 {order.shippingAddress.phone}</p>
+            {badge(order.isDelivered, 'Delivered', 'Not Delivered Yet')}
           </div>
 
           {/* Payment */}
-          <div style={styles.section}>
-            <h3 style={styles.sectionTitle}>💳 Payment</h3>
-            <p style={styles.infoText}>Method: <strong>{order.paymentMethod}</strong></p>
-            <p style={{
-              ...styles.badge,
-              backgroundColor: order.isPaid ? '#e6f4ea' : '#fff3e0',
-              color: order.isPaid ? 'green' : '#e65100',
-            }}>
-              {order.isPaid ? '✅ Paid' : '⏳ Payment Pending'}
-            </p>
+          <div className='sk-order-section'>
+            <h3 style={sectionTitle}>💳 Payment</h3>
+            <p style={infoText}>Method: <strong>{order.paymentMethod}</strong></p>
+            {badge(order.isPaid, 'Paid', 'Payment Pending')}
           </div>
         </div>
 
-        {/* Right: Price Summary */}
-        <div style={styles.summary}>
-          <h3 style={styles.sectionTitle}>🧾 Order Summary</h3>
-          {order.orderItems.map((item, i) => (
-            <div key={i} style={styles.summaryRow}>
-              <span>{item.name} × {item.qty}</span>
-              <span>₹{(item.price * item.qty).toLocaleString()}</span>
-            </div>
-          ))}
-          <hr />
-          <div style={styles.summaryRow}>
-            <span>Delivery</span>
-            <span style={{ color: 'green' }}>FREE</span>
+        {/* Right: Summary */}
+        <div className='sk-order-section' style={{ position: 'sticky', top: '76px' }}>
+          <h3 style={sectionTitle}>🧾 Order Summary</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px' }}>
+            {order.orderItems.map((item, i) => (
+              <div key={i} className='sk-summary-row'>
+                <span style={{ color: '#6b7280', fontSize: '13px', flex: 1, marginRight: '8px' }}>
+                  {item.name.length > 20 ? item.name.substring(0, 20) + '...' : item.name} × {item.qty}
+                </span>
+                <span className='sk-order-summary-price' style={{ fontSize: '13px' }}>
+                  ₹{(item.price * item.qty).toLocaleString()}
+                </span>
+              </div>
+            ))}
           </div>
-          <div style={{ ...styles.summaryRow, fontWeight: 'bold', fontSize: '17px' }}>
+          <hr style={{ border: 'none', borderTop: '1px solid #f0f0f0', margin: '10px 0' }} />
+          <div className='sk-summary-row'>
+            <span style={{ color: '#6b7280' }}>Delivery</span>
+            <span style={{ color: '#16a34a', fontWeight: '700' }}>FREE</span>
+          </div>
+          <div className='sk-summary-row' style={{ fontWeight: '800', fontSize: '17px', marginTop: '6px' }}>
             <span>Total</span>
             <span>₹{order.totalPrice.toLocaleString()}</span>
           </div>
-          <button onClick={() => navigate('/')} style={styles.btn}>
-            Continue Shopping
-          </button>
-          <button onClick={() => navigate('/myorders')} style={styles.outlineBtn}>
-            View My Orders
-          </button>
+          <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <button onClick={() => navigate('/')} className='sk-order-btn'>
+              Continue Shopping
+            </button>
+            <button onClick={() => navigate('/myorders')} className='sk-order-outline-btn'>
+              View My Orders
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-const styles = {
-  container: { maxWidth: '1000px', margin: '0 auto' },
-  successHeader: {
-    display: 'flex', alignItems: 'center', gap: '16px',
-    backgroundColor: '#e6f4ea', border: '1px solid #a8d5b5',
-    borderRadius: '8px', padding: '20px', marginBottom: '30px',
-  },
-  checkIcon: { fontSize: '40px' },
-  successTitle: { margin: 0, fontSize: '22px', color: '#1a5c2a' },
-  orderId: { margin: '4px 0 0', fontSize: '13px', color: '#555' },
-  layout: { display: 'grid', gridTemplateColumns: '1fr 280px', gap: '24px', alignItems: 'start' },
-  section: { border: '1px solid #ddd', borderRadius: '8px', padding: '20px', marginBottom: '16px', backgroundColor: '#fff' },
-  sectionTitle: { fontSize: '16px', marginBottom: '14px', color: '#131921' },
-  item: { display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '12px' },
-  itemImage: { width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px' },
-  itemName: { fontWeight: 'bold', margin: '0 0 4px', fontSize: '14px' },
-  itemMeta: { color: '#555', fontSize: '13px', margin: 0 },
-  infoText: { margin: '0 0 6px', fontSize: '14px', color: '#333' },
-  badge: { display: 'inline-block', padding: '4px 12px', borderRadius: '20px', fontSize: '13px', marginTop: '8px' },
-  summary: { border: '1px solid #ddd', borderRadius: '8px', padding: '20px', backgroundColor: '#fff', display: 'flex', flexDirection: 'column', gap: '10px' },
-  summaryRow: { display: 'flex', justifyContent: 'space-between', fontSize: '14px' },
-  btn: { backgroundColor: '#FFD814', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer', color: '#131921' },
-  outlineBtn: { backgroundColor: '#fff', border: '1px solid #ccc', padding: '12px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' },
-};
+const sectionTitle = { fontSize: '14px', fontWeight: '700', margin: '0 0 12px', color: '#1a1a2e' };
+const infoText = { margin: '0 0 5px', fontSize: '13px', color: '#374151', wordBreak: 'break-word' };
 
 export default OrderConfirmationPage;

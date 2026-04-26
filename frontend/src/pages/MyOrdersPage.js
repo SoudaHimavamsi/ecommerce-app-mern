@@ -3,11 +3,37 @@ import { useNavigate } from 'react-router-dom';
 import api from '../config/api';
 import { useAuth } from '../context/AuthContext';
 
+const ORDERS_CSS = `
+  .sk-order-header { display:flex; justify-content:space-between; align-items:center; padding:14px 18px; background:#f8f9fa; border-bottom:1px solid #f0f0f0; flex-wrap:wrap; gap:8px; }
+  .sk-order-header-left { display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+  .sk-header-divider { width:1px; height:24px; background:#e5e7eb; flex-shrink:0; }
+  .sk-order-footer { display:flex; justify-content:space-between; align-items:center; padding:12px 18px; border-top:1px solid #f0f0f0; background:#fafafa; flex-wrap:wrap; gap:10px; }
+  .sk-footer-right { display:flex; align-items:center; gap:14px; }
+  .sk-view-btn { white-space:nowrap; }
+  @media (max-width:480px) {
+    .sk-order-header { flex-direction:column; align-items:flex-start; }
+    .sk-order-header-left { gap:8px; }
+    .sk-header-divider { display:none; }
+    .sk-order-footer { flex-direction:column; align-items:flex-start; }
+    .sk-footer-right { width:100%; justify-content:space-between; }
+  }
+`;
+let ordersCssInjected = false;
+
 const MyOrdersPage = () => {
   const { userInfo } = useAuth();
   const navigate = useNavigate();
 
   const [orders, setOrders] = useState([]);
+
+  React.useEffect(() => {
+    if (!ordersCssInjected) {
+      const style = document.createElement('style');
+      style.textContent = ORDERS_CSS;
+      document.head.appendChild(style);
+      ordersCssInjected = true;
+    }
+  }, []);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -110,13 +136,13 @@ const MyOrdersPage = () => {
             <div key={order._id} style={styles.orderCard}>
 
               {/* Card Header */}
-              <div style={styles.orderHeader}>
-                <div style={styles.orderHeaderLeft}>
+              <div className="sk-order-header" style={styles.orderHeader}>
+                <div className="sk-order-header-left" style={styles.orderHeaderLeft}>
                   <div>
                     <p style={styles.orderIdLabel}>ORDER ID</p>
                     <p style={styles.orderId}>#{order._id.slice(-10).toUpperCase()}</p>
                   </div>
-                  <div style={styles.headerDivider} />
+                  <div className="sk-header-divider" style={styles.headerDivider} />
                   <div>
                     <p style={styles.orderIdLabel}>PLACED ON</p>
                     <p style={styles.orderDate}>
@@ -125,7 +151,7 @@ const MyOrdersPage = () => {
                       })}
                     </p>
                   </div>
-                  <div style={styles.headerDivider} />
+                  <div className="sk-header-divider" style={styles.headerDivider} />
                   <div>
                     <p style={styles.orderIdLabel}>PAYMENT</p>
                     <p style={styles.orderDate}>{order.paymentMethod}</p>
@@ -167,7 +193,7 @@ const MyOrdersPage = () => {
               </div>
 
               {/* Card Footer */}
-              <div style={styles.orderFooter}>
+              <div className="sk-order-footer" style={styles.orderFooter}>
                 <div style={styles.footerLeft}>
                   <div style={styles.footerBadge}>
                     <span style={styles.footerBadgeIcon}>💳</span>
@@ -182,14 +208,14 @@ const MyOrdersPage = () => {
                     </span>
                   </div>
                 </div>
-                <div style={styles.footerRight}>
+                <div className="sk-footer-right" style={styles.footerRight}>
                   <div style={styles.totalSection}>
                     <p style={styles.totalLabel}>Order Total</p>
                     <p style={styles.totalPrice}>₹{order.totalPrice.toLocaleString()}</p>
                   </div>
                   <button
                     onClick={() => navigate(`/order/${order._id}`)}
-                    style={styles.viewBtn}
+                    className="sk-view-btn" style={styles.viewBtn}
                   >
                     View Details →
                   </button>
