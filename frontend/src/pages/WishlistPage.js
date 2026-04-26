@@ -1,12 +1,62 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useWishlist } from '../context/WishlistContext';
 import { useCart } from '../context/CartContext';
+
+const WISHLIST_CSS = `
+  .sk-wishlist-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+  }
+  .sk-wishlist-card {
+    border-radius: 12px; overflow: hidden; background: #fff;
+    border: 1px solid #f0f0f0; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    display: flex; flex-direction: column;
+  }
+  .sk-wishlist-card-img {
+    width: 100%; height: 180px; object-fit: cover; display: block;
+  }
+  .sk-wishlist-info { padding: 12px; display: flex; flex-direction: column; gap: 5px; flex: 1; }
+  .sk-wishlist-name { font-size: 13px; font-weight: 600; color: #1a1a2e; text-decoration: none; line-height: 1.4; }
+  .sk-wishlist-brand { font-size: 11px; color: #9ca3af; margin: 0; text-transform: uppercase; letter-spacing: 0.5px; }
+  .sk-wishlist-rating { font-size: 12px; color: #f0a500; margin: 0; }
+  .sk-wishlist-price { font-size: 17px; font-weight: 700; color: #0f3460; margin: 0; }
+  .sk-wishlist-btn-row { display: flex; gap: 6px; margin-top: 6px; }
+  .sk-wishlist-cart-btn {
+    flex: 1; background: #FFD814; border: none; padding: 8px 10px;
+    border-radius: 7px; font-weight: 700; font-size: 12px;
+    cursor: pointer; color: #131921;
+  }
+  .sk-wishlist-remove-btn {
+    background: #fff; border: 1px solid #e5e7eb; padding: 8px 10px;
+    border-radius: 7px; font-size: 13px; cursor: pointer;
+    color: #ef4444; flex-shrink: 0;
+  }
+  @media (max-width: 480px) {
+    .sk-wishlist-grid { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
+    .sk-wishlist-card-img { height: 130px !important; }
+    .sk-wishlist-info { padding: 10px !important; }
+    .sk-wishlist-price { font-size: 14px !important; }
+    .sk-wishlist-cart-btn { font-size: 11px !important; padding: 7px 6px !important; }
+  }
+`;
+
+let wlCssInjected = false;
 
 const WishlistPage = () => {
   const { wishlistItems, removeFromWishlist } = useWishlist();
   const { addToCart } = useCart();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!wlCssInjected) {
+      const style = document.createElement('style');
+      style.textContent = WISHLIST_CSS;
+      document.head.appendChild(style);
+      wlCssInjected = true;
+    }
+  }, []);
 
   const moveToCart = (product) => {
     addToCart(product, 1);
@@ -17,60 +67,45 @@ const WishlistPage = () => {
   if (wishlistItems.length === 0) {
     return (
       <div style={styles.empty}>
-        <p style={styles.emptyIcon}>🤍</p>
-        <h2 style={styles.emptyTitle}>Your wishlist is empty</h2>
-        <p style={styles.emptyText}>
+        <p style={{ fontSize: '52px', margin: '0 0 14px' }}>🤍</p>
+        <h2 style={{ fontSize: '20px', color: '#1a1a2e', margin: '0 0 8px' }}>Your wishlist is empty</h2>
+        <p style={{ color: '#9ca3af', fontSize: '14px', margin: '0 0 20px' }}>
           Save items you love by clicking the heart icon on any product.
         </p>
-        <Link to='/' style={styles.shopBtn}>
-          Browse Products
-        </Link>
+        <Link to='/' style={styles.shopBtn}>Browse Products</Link>
       </div>
     );
   }
 
   return (
-    <div style={styles.container}>
+    <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
       <h2 style={styles.heading}>
         ❤️ My Wishlist
         <span style={styles.count}>{wishlistItems.length} items</span>
       </h2>
 
-      <div style={styles.grid}>
+      <div className='sk-wishlist-grid'>
         {wishlistItems.map((product) => (
-          <div key={product._id} style={styles.card}>
-            {/* Image */}
+          <div key={product._id} className='sk-wishlist-card'>
             <Link to={`/product/${product._id}`}>
               <img
                 src={product.image}
                 alt={product.name}
-                style={styles.image}
+                className='sk-wishlist-card-img'
               />
             </Link>
-
-            {/* Info */}
-            <div style={styles.info}>
-              <Link to={`/product/${product._id}`} style={styles.name}>
-                {product.name}
+            <div className='sk-wishlist-info'>
+              <p className='sk-wishlist-brand'>{product.brand}</p>
+              <Link to={`/product/${product._id}`} className='sk-wishlist-name'>
+                {product.name.length > 40 ? product.name.substring(0, 40) + '...' : product.name}
               </Link>
-              <p style={styles.brand}>{product.brand}</p>
-              <p style={styles.rating}>
-                ⭐ {product.rating} ({product.numReviews} reviews)
-              </p>
-              <p style={styles.price}>₹{product.price.toLocaleString()}</p>
-
-              {/* Buttons */}
-              <div style={styles.btnRow}>
-                <button
-                  onClick={() => moveToCart(product)}
-                  style={styles.cartBtn}
-                >
+              <p className='sk-wishlist-rating'>⭐ {product.rating} ({product.numReviews})</p>
+              <p className='sk-wishlist-price'>₹{product.price.toLocaleString()}</p>
+              <div className='sk-wishlist-btn-row'>
+                <button onClick={() => moveToCart(product)} className='sk-wishlist-cart-btn'>
                   🛒 Move to Cart
                 </button>
-                <button
-                  onClick={() => removeFromWishlist(product._id)}
-                  style={styles.removeBtn}
-                >
+                <button onClick={() => removeFromWishlist(product._id)} className='sk-wishlist-remove-btn'>
                   🗑️
                 </button>
               </div>
@@ -83,98 +118,20 @@ const WishlistPage = () => {
 };
 
 const styles = {
-  container: { maxWidth: '1100px', margin: '0 auto' },
   heading: {
-    fontSize: '24px',
-    marginBottom: '24px',
-    color: '#131921',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
+    fontSize: '22px', marginBottom: '20px', color: '#131921',
+    display: 'flex', alignItems: 'center', gap: '10px',
   },
   count: {
-    fontSize: '14px',
-    backgroundColor: '#f0f2f5',
-    padding: '4px 12px',
-    borderRadius: '20px',
-    color: '#555',
-    fontWeight: 'normal',
+    fontSize: '13px', backgroundColor: '#f0f2f5',
+    padding: '3px 10px', borderRadius: '20px',
+    color: '#555', fontWeight: 'normal',
   },
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
-    gap: '20px',
-  },
-  card: {
-    border: '1px solid #ddd',
-    borderRadius: '8px',
-    overflow: 'hidden',
-    backgroundColor: '#fff',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-    display: 'flex',
-    flexDirection: 'column',
-  },
-  image: {
-    width: '100%',
-    height: '200px',
-    objectFit: 'cover',
-    display: 'block',
-  },
-  info: {
-    padding: '14px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-  },
-  name: {
-    fontSize: '15px',
-    fontWeight: 'bold',
-    color: '#131921',
-    textDecoration: 'none',
-  },
-  brand: { fontSize: '13px', color: '#888', margin: 0 },
-  rating: { fontSize: '13px', color: '#f0a500', margin: 0 },
-  price: { fontSize: '18px', fontWeight: 'bold', color: '#B12704', margin: 0 },
-  btnRow: {
-    display: 'flex',
-    gap: '8px',
-    marginTop: '6px',
-  },
-  cartBtn: {
-    flex: 1,
-    backgroundColor: '#FFD814',
-    border: 'none',
-    padding: '9px 12px',
-    borderRadius: '6px',
-    fontWeight: 'bold',
-    fontSize: '13px',
-    cursor: 'pointer',
-    color: '#131921',
-  },
-  removeBtn: {
-    backgroundColor: '#fff',
-    border: '1px solid #ddd',
-    padding: '9px 12px',
-    borderRadius: '6px',
-    fontSize: '14px',
-    cursor: 'pointer',
-    color: '#B12704',
-  },
-  empty: {
-    textAlign: 'center',
-    padding: '80px 20px',
-  },
-  emptyIcon: { fontSize: '60px', margin: '0 0 16px' },
-  emptyTitle: { fontSize: '24px', color: '#131921', marginBottom: '8px' },
-  emptyText: { color: '#888', fontSize: '15px', marginBottom: '24px' },
+  empty: { textAlign: 'center', padding: '60px 20px' },
   shopBtn: {
-    backgroundColor: '#FFD814',
-    padding: '12px 28px',
-    borderRadius: '8px',
-    textDecoration: 'none',
-    color: '#131921',
-    fontWeight: 'bold',
-    display: 'inline-block',
+    backgroundColor: '#FFD814', padding: '11px 24px',
+    borderRadius: '8px', textDecoration: 'none',
+    color: '#131921', fontWeight: 'bold', display: 'inline-block',
   },
 };
 
