@@ -263,7 +263,7 @@ const AdminProductFormPage = () => {
 };
 
 const styles = {
-  container: { maxWidth: '900px', margin: '0 auto', padding: '20px' },
+  container: { maxWidth: '680px', margin: '0 auto' },
   header: { display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '24px' },
   heading: { fontSize: '24px', margin: 0, color: '#131921' },
   backBtn: {
