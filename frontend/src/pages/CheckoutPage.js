@@ -6,6 +6,33 @@ import { useAuth } from '../context/AuthContext';
 
 const STEPS = ['Shipping', 'Payment', 'Review'];
 
+const CHECKOUT_CSS = `
+  @media (max-width: 768px) {
+    .sk-checkout-main-layout {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 16px !important;
+    }
+    .sk-checkout-summary-card {
+      position: static !important;
+    }
+    .sk-checkout-form-grid {
+      grid-template-columns: 1fr !important;
+    }
+    .sk-checkout-info-cards {
+      grid-template-columns: 1fr !important;
+    }
+    .sk-checkout-btn-row {
+      flex-direction: column !important;
+    }
+    .sk-checkout-continue-btn,
+    .sk-checkout-place-btn {
+      width: 100% !important;
+    }
+  }
+`;
+let checkoutCssInjected = false;
+
 const CheckoutPage = () => {
   const { cartItems, clearCart } = useCart();
   const { userInfo } = useAuth();
@@ -24,6 +51,19 @@ const CheckoutPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [focusedField, setFocusedField] = useState(null);
+  const [useSavedAddress, setUseSavedAddress] = useState(false);
+  const savedAddress = (() => {
+    try { return JSON.parse(localStorage.getItem('snapkart_address')); } catch { return null; }
+  })();
+
+  React.useEffect(() => {
+    if (!checkoutCssInjected) {
+      const style = document.createElement('style');
+      style.textContent = CHECKOUT_CSS;
+      document.head.appendChild(style);
+      checkoutCssInjected = true;
+    }
+  }, []);
 
   const totalPrice = cartItems.reduce((acc, item) => acc + item.price * item.qty, 0);
   const totalItems = cartItems.reduce((acc, item) => acc + item.qty, 0);
@@ -152,7 +192,7 @@ const CheckoutPage = () => {
 
       {/* Page Header */}
       <div style={styles.pageHeader}>
-        <h1 className="sk-checkout-heading" style={styles.heading}>Checkout</h1>
+        <h1 style={styles.heading}>Checkout</h1>
         <p style={styles.subheading}>{totalItems} item{totalItems !== 1 ? 's' : ''} · ₹{totalPrice.toLocaleString()}</p>
       </div>
 
@@ -164,7 +204,7 @@ const CheckoutPage = () => {
       )}
 
       {/* Step Indicator */}
-      <div className="sk-step-bar" style={styles.stepBar}>
+      <div style={styles.stepBar}>
         {STEPS.map((label, i) => {
           const stepNum = i + 1;
           const isCompleted = step > stepNum;
@@ -191,7 +231,7 @@ const CheckoutPage = () => {
                   {label}
                 </span>
               </div>
-              {i < STEPS.length - 1 && (
+              {i < STEPS.length - 1 && window.innerWidth > 480 && (
                 <div style={{
                   ...styles.stepConnector,
                   backgroundColor: step > stepNum ? '#16a34a' : '#e5e7eb',
@@ -203,10 +243,10 @@ const CheckoutPage = () => {
       </div>
 
       {/* Main Layout */}
-      <div className="sk-checkout-layout" style={styles.layout}>
+      <div className='sk-checkout-main-layout' style={styles.layout}>
 
         {/* Left: Form */}
-        <div className="sk-form-card" style={styles.formCard}>
+        <div style={styles.formCard}>
 
           {/* Step 1: Shipping */}
           {step === 1 && (
@@ -219,7 +259,33 @@ const CheckoutPage = () => {
                 </div>
               </div>
 
-              <div className="sk-checkout-form-grid" style={styles.formGrid}>
+              {/* Saved address toggle */}
+              {savedAddress && savedAddress.street && (
+                <div style={{ marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer',
+                    padding: '12px 14px', border: `1.5px solid ${useSavedAddress ? '#0f1923' : '#e5e7eb'}`,
+                    borderRadius: '10px', background: useSavedAddress ? '#f8f9fa' : '#fff' }}>
+                    <input type='radio' name='addrChoice' checked={useSavedAddress}
+                      onChange={() => { setUseSavedAddress(true); setAddress({ ...address, ...savedAddress, fullName: address.fullName }); }}
+                      style={{ accentColor: '#0f1923' }} />
+                    <span style={{ fontSize: '14px', fontWeight: '600', color: '#1a1a2e' }}>
+                      Use saved address: <span style={{ fontWeight: '400', color: '#6b7280' }}>
+                        {savedAddress.street}, {savedAddress.city}
+                      </span>
+                    </span>
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer',
+                    padding: '12px 14px', border: `1.5px solid ${!useSavedAddress ? '#0f1923' : '#e5e7eb'}`,
+                    borderRadius: '10px', background: !useSavedAddress ? '#f8f9fa' : '#fff' }}>
+                    <input type='radio' name='addrChoice' checked={!useSavedAddress}
+                      onChange={() => setUseSavedAddress(false)}
+                      style={{ accentColor: '#0f1923' }} />
+                    <span style={{ fontSize: '14px', fontWeight: '600', color: '#1a1a2e' }}>Enter new address</span>
+                  </label>
+                </div>
+              )}
+
+              <div className='sk-checkout-form-grid' style={styles.formGrid}>
                 <div style={styles.field}>
                   <label style={styles.label}>Full Name</label>
                   <input
@@ -302,7 +368,7 @@ const CheckoutPage = () => {
                   setError(null);
                   setStep(2);
                 }}
-                style={styles.continueBtn}
+                className='sk-checkout-continue-btn' style={styles.continueBtn}
               >
                 Continue to Payment →
               </button>
@@ -359,7 +425,7 @@ const CheckoutPage = () => {
                 ))}
               </div>
 
-              <div style={styles.btnRow}>
+              <div className='sk-checkout-btn-row' style={styles.btnRow}>
                 <button onClick={() => setStep(1)} style={styles.backBtn}>← Back</button>
                 <button onClick={() => setStep(3)} style={styles.continueBtn}>
                   Continue to Review →
@@ -398,7 +464,7 @@ const CheckoutPage = () => {
               </div>
 
               {/* Summary Info Cards */}
-              <div style={styles.infoCards}>
+              <div className='sk-checkout-info-cards' style={styles.infoCards}>
                 <div style={styles.infoCard}>
                   <p style={styles.infoCardTitle}>📦 Delivering to</p>
                   <p style={styles.infoCardText}>{address.fullName}</p>
@@ -420,11 +486,11 @@ const CheckoutPage = () => {
                 </div>
               </div>
 
-              <div style={styles.btnRow}>
+              <div className='sk-checkout-btn-row' style={styles.btnRow}>
                 <button onClick={() => setStep(2)} style={styles.backBtn}>← Back</button>
                 <button
                   onClick={placeOrderHandler}
-                  style={{ ...styles.placeOrderBtn, opacity: loading ? 0.8 : 1 }}
+                  className='sk-checkout-place-btn' style={{ ...styles.placeOrderBtn, opacity: loading ? 0.8 : 1 }}
                   disabled={loading}
                 >
                   {loading
@@ -439,7 +505,7 @@ const CheckoutPage = () => {
         </div>
 
         {/* Right: Order Summary */}
-        <div style={styles.summaryCard}>
+        <div className='sk-checkout-summary-card' style={styles.summaryCard}>
           <h3 style={styles.summaryTitle}>Order Summary</h3>
 
           <div style={styles.summaryItems}>
@@ -520,45 +586,66 @@ const styles = {
 
   // Step Bar
   stepBar: {
-    display: 'flex', alignItems: 'center',
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '8px',
     marginBottom: '28px',
     backgroundColor: '#fff',
     borderRadius: '14px',
-    padding: '20px 28px',
+    padding: '16px',
     border: '1px solid #f0f0f0',
     boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
   },
   stepItem: {
-    display: 'flex', alignItems: 'center',
-    gap: '10px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+    minWidth: '80px',
+    gap: '4px',
+    textAlign: 'center',
   },
+
   stepCircle: {
-    width: '34px', height: '34px',
-    borderRadius: '50%', display: 'flex',
-    alignItems: 'center', justifyContent: 'center',
-    fontWeight: '700', fontSize: '14px',
-    transition: 'all 0.3s', flexShrink: 0,
+    width: '30px',
+    height: '30px',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontWeight: '700',
+    fontSize: '13px',
+    transition: 'all 0.3s',
+    flexShrink: 0,
   },
   stepLabel: {
-    fontSize: '14px', transition: 'all 0.2s',
-    whiteSpace: 'nowrap',
+    fontSize: '12px',
+    textAlign: 'center',
+    transition: 'all 0.2s',
+    whiteSpace: 'normal',
+    lineHeight: '1.2',
   },
   stepConnector: {
-    flex: 1, height: '2px',
-    margin: '0 16px',
+    flex: 1,
+    height: '2px',
+    margin: '0 12px',
     transition: 'background-color 0.3s',
   },
 
-  // Layout
+  // Layout - UPDATED
   layout: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 300px',
+    display: 'flex',
+    flexDirection: 'column',
     gap: '24px',
-    alignItems: 'start',
+    alignItems: 'stretch',
   },
 
-  // Form Card
+  // Form Card - UPDATED
   formCard: {
+    width: '100%',
     backgroundColor: '#fff',
     borderRadius: '16px',
     padding: '28px',
@@ -667,15 +754,14 @@ const styles = {
     letterSpacing: '0.3px', transition: 'opacity 0.2s',
   },
 
-  // Summary Card
+  // Summary Card - UPDATED
   summaryCard: {
+    width: '100%',
     backgroundColor: '#fff',
     borderRadius: '16px',
     padding: '24px',
     border: '1px solid #f0f0f0',
     boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
-    position: 'sticky',
-    top: '88px',
   },
   summaryTitle: { fontSize: '16px', fontWeight: '700', color: '#1a1a2e', margin: '0 0 16px' },
   summaryItems: { display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '16px' },
