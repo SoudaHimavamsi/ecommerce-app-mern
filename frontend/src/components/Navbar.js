@@ -16,7 +16,6 @@ const NAV_CSS = `
   .sk-search-icon { padding:0 8px; display:flex; align-items:center; flex-shrink:0; }
   .sk-input { flex:1; min-width:0; padding:10px 4px; font-size:14px; border:none; outline:none; background:transparent; color:#333; }
   .sk-clear-btn { background:none; border:none; color:#bbb; cursor:pointer; padding:0 8px; flex-shrink:0; font-size:13px; }
-  .sk-search-btn { flex-shrink:0; width:80px; padding:10px 0; background:#FFD814; border:none; color:#0f1923; font-weight:700; font-size:13px; cursor:pointer; text-align:center; }
   .sk-links { display:flex; align-items:center; gap:10px; flex-shrink:0; }
   .sk-icon-link { display:flex; flex-direction:column; align-items:center; gap:2px; text-decoration:none; color:#fff; }
   .sk-icon-wrapper { position:relative; display:flex; align-items:center; }
@@ -55,7 +54,6 @@ const NAV_CSS = `
     .sk-nav-inner { height:56px; padding:0 10px; gap:8px; }
     .sk-brand-icon { width:28px; height:28px; font-size:13px; }
     .sk-input { padding:8px 4px; font-size:13px; }
-    .sk-search-btn { width:64px; font-size:12px; }
     .sk-clear-btn { display:none; }
     .sk-links { gap:4px; }
     .sk-admin-badge { font-size:10px; padding:3px 6px; }
@@ -154,7 +152,6 @@ const Navbar = () => {
             {searchTerm && (
               <button type='button' onClick={() => setSearchTerm('')} className='sk-clear-btn'>✕</button>
             )}
-            <button type='submit' className='sk-search-btn'>Search</button>
           </div>
         </form>
 
@@ -188,16 +185,6 @@ const Navbar = () => {
           </Link>
 
           <div className='sk-divider' />
-
-          {/* Orders — only when logged in */}
-          {userInfo && (
-            <Link
-              to='/myorders'
-              className={`sk-nav-link ${isActive('/myorders') ? 'sk-nav-link-active' : ''}`}
-            >
-              Orders
-            </Link>
-          )}
 
           {/* Admin — only when admin */}
           {userInfo?.isAdmin && (
