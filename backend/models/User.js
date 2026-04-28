@@ -3,45 +3,35 @@ const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema(
   {
-    name: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-      lowercase: true,
-      trim: true,
-    },
-    password: {
-      type: String,
-      required: true,
-      minlength: 6,
-    },
-    isAdmin: {
-      type: Boolean,
-      default: false,
-    },
+    name:     { type: String, required: true, trim: true },
+    email:    { type: String, required: true, unique: true, lowercase: true, trim: true },
+    password: { type: String, required: true, minlength: 6 },
+    isAdmin:  { type: Boolean, default: false },
+
+    cart: [
+      {
+        product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
+        qty:     { type: Number, required: true, default: 1, min: 1 },
+      },
+    ],
+
+    wishlist: [
+      {
+        product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
+      },
+    ],
   },
-  {
-    timestamps: true, // adds createdAt and updatedAt automatically
-  }
+  { timestamps: true }
 );
 
-// Hash password BEFORE saving to database
 userSchema.pre('save', async function () {
   if (!this.isModified('password')) return;
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
 });
 
-// Method to check if entered password matches hashed password
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-const User = mongoose.model('User', userSchema);
-
-module.exports = User;
+module.exports = mongoose.model('User', userSchema);
