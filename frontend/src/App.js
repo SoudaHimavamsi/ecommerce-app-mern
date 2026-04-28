@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -19,9 +19,33 @@ import AdminUsersPage from './pages/AdminUsersPage';
 import WishlistPage from './pages/WishlistPage';
 import ProfilePage from './pages/ProfilePage';
 
-function App() {
+import { useCart } from './context/CartContext';
+import { useWishlist } from './context/WishlistContext';
+import { registerOnLogin } from './context/AuthContext';
+
+// Inner component so it can access context hooks
+function AppInner() {
+  const { mergeAndFetchCart } = useCart();
+  const { mergeAndFetchWishlist } = useWishlist();
+
+  useEffect(() => {
+    // Register callbacks so AuthContext can trigger merge after login
+    registerOnLogin(mergeAndFetchCart);
+    registerOnLogin(mergeAndFetchWishlist);
+
+    // On page load — if already logged in, load backend data
+    const token = (() => {
+      try { return JSON.parse(localStorage.getItem('userInfo'))?.token; } catch { return null; }
+    })();
+    if (token) {
+      mergeAndFetchCart();
+      mergeAndFetchWishlist();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
-    <Router>
+    <>
       <Navbar />
       <main style={mainStyle}>
         <Routes>
@@ -45,6 +69,14 @@ function App() {
         </Routes>
       </main>
       <Footer />
+    </>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <AppInner />
     </Router>
   );
 }
