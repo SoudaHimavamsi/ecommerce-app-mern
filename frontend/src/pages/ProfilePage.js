@@ -91,7 +91,7 @@ const ProfilePage = () => {
     setPwMsg(null);
     try {
       await api.put(
-        '/api/auth/changepassword',
+        '/api/users/changepassword',
         { currentPassword: passwords.current, newPassword: passwords.newPass },
         { headers: { Authorization: `Bearer ${userInfo.token}` } }
       );
