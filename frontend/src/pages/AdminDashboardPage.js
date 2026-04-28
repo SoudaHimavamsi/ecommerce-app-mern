@@ -122,10 +122,10 @@ const AdminDashboardPage = () => {
     <div style={styles.container}>
 
       {/* Header */}
-      <div className="sk-admin-header" style={styles.header}>
+      <div style={styles.header}>
         <div>
           <p style={styles.headerLabel}>Admin Panel</p>
-          <h1 className="sk-admin-heading" style={styles.heading}>Dashboard</h1>
+          <h1 style={styles.heading}>Dashboard</h1>
         </div>
         <div style={styles.headerRight}>
           <div style={styles.adminBadge}>
@@ -137,15 +137,15 @@ const AdminDashboardPage = () => {
               {userInfo.name.charAt(0).toUpperCase()}
             </div>
             <div>
-              <p className="sk-admin-name" style={styles.adminName}>{userInfo.name}</p>
-              <p className="sk-admin-role" style={styles.adminRole}>Administrator</p>
+              <p style={styles.adminName}>{userInfo.name}</p>
+              <p style={styles.adminRole}>Administrator</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Stat Cards */}
-      <div className="sk-stats-grid" style={styles.statsGrid}>
+      <div style={styles.statsGrid}>
         {statCards.map((card, i) => (
           <div key={i} style={styles.statCard}>
             <div style={styles.statCardTop}>
@@ -222,14 +222,11 @@ const AdminDashboardPage = () => {
             { label: 'Registered Users', value: stats.totalUsers, icon: '👥', note: 'Total accounts' },
             { label: 'Revenue Generated', value: `₹${stats.totalRevenue.toLocaleString()}`, icon: '💰', note: 'Paid orders only' },
           ].map((row, i) => (
-            <div key={i} style={{
-              ...styles.overviewRow,
-              borderBottom: i < 3 ? '1px solid #f5f5f5' : 'none',
-            }}>
+            <div key={i} style={styles.overviewRow}>
               <span style={styles.overviewIcon}>{row.icon}</span>
+              <span style={styles.overviewValue}>{row.value}</span>
               <span style={styles.overviewLabel}>{row.label}</span>
               <span style={styles.overviewNote}>{row.note}</span>
-              <span style={styles.overviewValue}>{row.value}</span>
             </div>
           ))}
         </div>
@@ -390,21 +387,22 @@ const styles = {
 
   // Overview
   overviewTable: {
-    border: '1px solid #f0f0f0',
-    borderRadius: '10px',
-    overflow: 'hidden',
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+    gap: '12px',
   },
   overviewRow: {
-    display: 'flex', alignItems: 'center',
-    gap: '14px', padding: '16px 20px',
-    backgroundColor: '#fff',
+    display: 'flex', flexDirection: 'column',
+    alignItems: 'flex-start', gap: '8px',
+    padding: '16px', backgroundColor: '#fff',
+    border: '1px solid #f0f0f0', borderRadius: '10px',
   },
-  overviewIcon: { fontSize: '20px', flexShrink: 0 },
-  overviewLabel: { flex: 1, fontSize: '14px', fontWeight: '500', color: '#333' },
-  overviewNote: { fontSize: '12px', color: '#bbb', minWidth: '100px', textAlign: 'right' },
+  overviewIcon: { fontSize: '22px' },
+  overviewLabel: { fontSize: '13px', fontWeight: '500', color: '#555', margin: 0 },
+  overviewNote: { fontSize: '11px', color: '#bbb', margin: 0 },
   overviewValue: {
-    fontSize: '16px', fontWeight: '800',
-    color: '#1a1a2e', minWidth: '80px', textAlign: 'right',
+    fontSize: '22px', fontWeight: '800',
+    color: '#1a1a2e', margin: 0,
   },
 };
 
